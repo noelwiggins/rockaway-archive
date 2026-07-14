@@ -174,6 +174,49 @@ def delete_photo(photo_id):
     return redirect(url_for("main.gallery"))
 
 
+@main_bp.route("/admin/fix-geocoding", methods=["POST"])
+def fix_geocoding():
+    if not is_admin():
+        return {"error": "not authorized"}, 403
+
+    import re
+    import sys
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "scripts"))
+    from geocode_utils import neighborhood_for_beach_number, interpolate_beach_street, jitter
+
+    def derive(title, call_number):
+        m = re.match(r'^(\d+)(?:-\d+)?\s+Rockaway Beach Boulevard', title)
+        if m:
+            num = m.group(1)
+            beach_num = int(num[:-2]) if len(num) > 2 else int(num)
+            hood = neighborhood_for_beach_number(beach_num)
+            lat, lng = interpolate_beach_street(beach_num)
+            dlat, dlng = jitter(call_number or title, meters=40)
+            note = ("Approximate location — the property record's block/lot didn't match this "
+                    "address during import, so this pin is interpolated from the Rockaway Beach "
+                    "Boulevard house number instead.")
+            return round(lat + dlat, 6), round(lng + dlng, 6), hood, "street_approximate", note
+        else:
+            lat, lng = interpolate_beach_street(100)
+            return lat, lng, "Rockaway Beach", "neighborhood_approximate", "Approximate — no house number on file."
+
+    bad = Photo.query.filter(
+        db.or_(Photo.latitude > 40.65, Photo.latitude < 40.5,
+               Photo.longitude > -73.7, Photo.longitude < -73.9)
+    ).all()
+    fixed = 0
+    for p in bad:
+        lat, lng, hood, prec, note = derive(p.title, p.call_number)
+        p.latitude, p.longitude = lat, lng
+        p.neighborhood = hood
+        p.location_precision = prec
+        p.location_note = note
+        fixed += 1
+    db.session.commit()
+    return {"fixed": fixed}
+
+
 @main_bp.route("/login", methods=["GET", "POST"])
 def admin_login():
     next_url = request.args.get("next") or url_for("main.gallery")
