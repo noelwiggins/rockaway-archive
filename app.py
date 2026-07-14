@@ -29,12 +29,10 @@ def create_app():
 
 
 def _auto_seed_if_empty():
-    """On first boot against a fresh database, load the bundled seed files.
-    Safe to run on every startup: it's a no-op once photos already exist."""
+    """Load all bundled seed files on every boot. Per-item duplicate detection
+    (title + source_url, same as the `flask seed` CLI) makes this idempotent,
+    so it's safe whether the table is empty or already partially seeded."""
     from models import Photo
-
-    if Photo.query.count() > 0:
-        return
 
     for path, added_by in [
         ("seed_data/photos_seed.json", "Library of Congress import"),
@@ -46,7 +44,14 @@ def _auto_seed_if_empty():
             continue
         with open(path) as f:
             items = json.load(f)
+        added = 0
         for item in items:
+            exists = Photo.query.filter_by(
+                title=item["title"], source_url=item.get("source_url")
+            ).first()
+            if exists:
+                continue
+
             sort_year = None
             date_str = item.get("display_date", "")
             digits = "".join(c for c in date_str[:4] if c.isdigit())
@@ -71,8 +76,10 @@ def _auto_seed_if_empty():
                 added_by=added_by,
             )
             db.session.add(photo)
+            added += 1
         db.session.commit()
-        print(f"Auto-seeded {len(items)} photos from {path}")
+        if added:
+            print(f"Auto-seeded {added} new photos from {path}")
 
 
 def register_cli(app):
