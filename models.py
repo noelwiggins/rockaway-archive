@@ -1,7 +1,7 @@
 from datetime import datetime
 from extensions import db
 
-NEIGHBORHOODS = ["Rockaway Beach", "Rockaway Park", "Hammels", "Arverne", "Other"]
+NEIGHBORHOODS = ["Rockaway Beach", "Rockaway Park", "Hammels", "Arverne", "Edgemere", "Belle Harbor", "Neponsit", "Far Rockaway", "Other"]
 PRECISION_LEVELS = ["exact_address", "street_approximate", "neighborhood_approximate"]
 
 
