@@ -307,7 +307,7 @@ a { color: inherit; text-decoration: none; }
 
 .sidebar-toggle-tab {
   position: absolute;
-  top: 16px;
+  top: 70px;
   right: 16px;
   z-index: 500;
   background: var(--paper-white);
@@ -319,6 +319,26 @@ a { color: inherit; text-decoration: none; }
   cursor: pointer;
   box-shadow: 3px 3px 0 rgba(28,43,51,0.15);
 }
+
+/* Leaflet layer control, restyled to match the postcard theme */
+.leaflet-control-layers {
+  border: 2px solid var(--ink) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: 3px 3px 0 rgba(28,43,51,0.15) !important;
+  background: var(--paper-white) !important;
+}
+.leaflet-control-layers-toggle {
+  width: 34px !important;
+  height: 34px !important;
+}
+.leaflet-control-layers-expanded {
+  padding: 10px 12px !important;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--ink);
+}
+.leaflet-control-layers label { margin-bottom: 4px; }
+.leaflet-control-layers-separator { border-top: 1px dashed var(--sand-dark) !important; margin: 6px 0 !important; }
 
 .leaflet-popup-content-wrapper {
   background: var(--paper-white);
