@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Map — {{ site_name }}{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
+<style>#map-canvas { z-index: 1; }</style>
+{% endblock %}
+
+{% block content %}
+<div class="map-page">
+  <div id="map-canvas"></div>
+
+  <div class="map-panel">
+    <h2>Find a spot</h2>
+    <div class="chip-row">
+      <a href="{{ url_for('main.map_view') }}" class="chip {{ 'active' if not selected_neighborhood }}">All</a>
+      {% for hood in neighborhoods %}
+        {% if hood != 'Other' %}
+        <a href="{{ url_for('main.map_view', neighborhood=hood) }}" class="chip {{ 'active' if selected_neighborhood == hood }}">{{ hood }}</a>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <div class="map-stats">
+      {{ total_geocoded }} pinned on the map &middot;
+      {{ total_ungeocoded }} without a known location —
+      <a href="{{ url_for('main.gallery', show='ungeocoded') }}">see those</a>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
+<script>
+  const PHOTOS = {{ photos | tojson }};
+  const PHOTO_DETAIL_BASE = "{{ url_for('main.photo_detail', photo_id=0) }}".replace('/0', '/');
+</script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}
