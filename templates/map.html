@@ -2,8 +2,6 @@
 {% block title %}Map — {{ site_name }}{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
 <style>#map-canvas { z-index: 1; }</style>
 {% endblock %}
 
@@ -27,13 +25,21 @@
       <a href="{{ url_for('main.gallery', show='ungeocoded') }}">see those</a>
     </div>
   </div>
+
+  <button class="sidebar-toggle-tab" id="sidebar-toggle" style="display:none;">Photos &rsaquo;</button>
+
+  <aside class="photo-sidebar collapsed" id="photo-sidebar">
+    <div class="sidebar-empty" id="sidebar-empty">
+      Click any dot on the map to see the photos there.
+    </div>
+  </aside>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <script>
-  const PHOTOS = {{ photos | tojson }};
+  const GROUPED_PHOTOS_URL = "{{ url_for('api.photos_grouped', neighborhood=selected_neighborhood) }}";
   const PHOTO_DETAIL_BASE = "{{ url_for('main.photo_detail', photo_id=0) }}".replace('/0', '/');
 </script>
 <script src="{{ url_for('static', filename='js/map.js') }}"></script>
 {% endblock %}
+
