@@ -39,6 +39,8 @@ def _auto_seed_if_empty():
     for path, added_by in [
         ("seed_data/photos_seed.json", "Library of Congress import"),
         ("seed_data/hammels_seed.json", "NYC Municipal Archives import"),
+        ("seed_data/parks_dept_seed.json", "NYC Municipal Archives import"),
+        ("seed_data/tax_photos_seed.json", "NYC Municipal Archives import"),
     ]:
         if not os.path.exists(path):
             continue
