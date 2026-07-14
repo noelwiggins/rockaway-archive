@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Photos — {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page-wrap">
+  <h1 class="page-heading">All photos</h1>
+  <p class="page-sub">{{ photos|length }} result{{ 's' if photos|length != 1 }}</p>
+
+  <form class="filter-bar" method="get">
+    <input type="text" name="q" placeholder="Search title, description, tags&hellip;" value="{{ search }}">
+    <select name="neighborhood">
+      <option value="">All neighborhoods</option>
+      {% for hood in neighborhoods %}
+        <option value="{{ hood }}" {{ 'selected' if selected_neighborhood == hood }}>{{ hood }}</option>
+      {% endfor %}
+    </select>
+    <select name="show">
+      <option value="all" {{ 'selected' if show == 'all' }}>All photos</option>
+      <option value="geocoded" {{ 'selected' if show == 'geocoded' }}>On the map</option>
+      <option value="ungeocoded" {{ 'selected' if show == 'ungeocoded' }}>Not yet located</option>
+    </select>
+    <button type="submit">Filter</button>
+    {% if search or selected_neighborhood or show != 'all' %}
+      <a href="{{ url_for('main.gallery') }}" style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--rust);">Clear</a>
+    {% endif %}
+  </form>
+
+  {% if photos %}
+  <div class="postcard-grid">
+    {% for photo in photos %}
+    <a href="{{ url_for('main.photo_detail', photo_id=photo.id) }}" class="postcard">
+      <div class="postmark">
+        <span class="pm-hood">{{ photo.neighborhood or 'Rockaway' }}</span>
+        <span class="pm-date">{{ photo.display_date }}</span>
+      </div>
+      <div class="postcard-img-wrap">
+        {% if photo.thumbnail_url or photo.image_url %}
+          <img src="{{ photo.thumbnail_url or photo.image_url }}" alt="{{ photo.title }}" loading="lazy">
+        {% endif %}
+      </div>
+      <div class="postcard-body">
+        <p class="postcard-title">{{ photo.title }}</p>
+        <p class="postcard-meta">{{ photo.source }}</p>
+        {% if not photo.is_geocoded %}
+          <span class="badge-ungeocoded">Location unknown</span>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="font-family: var(--font-mono); color: #8a8070;">No photos match those filters yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
