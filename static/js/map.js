@@ -3,11 +3,48 @@
 
   const map = L.map("map-canvas", { zoomControl: true }).setView(ROCKAWAY_CENTER, 13);
 
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+  const darkLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     subdomains: "abcd",
     maxZoom: 19,
-  }).addTo(map);
+  });
+
+  const satelliteLayer = L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    { attribution: "Esri, Maxar, Earthstar Geographics", maxZoom: 19 }
+  );
+
+  darkLayer.addTo(map);
+
+  const baseLayers = { "Dark": darkLayer, "Satellite": satelliteLayer };
+
+  // Sanborn Fire Insurance Map overlays — raw public-domain sheet scans from the
+  // Library of Congress, placed at their approximate historical extent. These
+  // are hand-positioned estimates (LOC doesn't provide pre-georeferenced tiles
+  // for these sheets), so treat alignment as approximate, not survey-accurate.
+  const sanbornOverlays = {};
+  const sanbornLayerGroup = L.layerGroup();
+
+  const SANBORN_SHEETS = [
+    {
+      name: "Sanborn 1894 — Rockaway Beach (index)",
+      url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0001/full/pct:25/0/default.jpg",
+      // Approximate extent — the 1894 Village of Rockaway Beach, spanning
+      // roughly Beach 108th to Beach 126th. Adjust as needed once cross-checked
+      // against street names on the sheet.
+      bounds: [[40.5760, -73.8460], [40.5900, -73.8250]],
+    },
+  ];
+
+  SANBORN_SHEETS.forEach(function (sheet) {
+    const overlay = L.imageOverlay(sheet.url, sheet.bounds, { opacity: 0.75 });
+    sanbornOverlays[sheet.name] = overlay;
+    overlay.addTo(sanbornLayerGroup);
+  });
+
+  const overlayLayers = { "Sanborn maps (1894)": sanbornLayerGroup };
+
+  L.control.layers(baseLayers, overlayLayers, { collapsed: true, position: "topright" }).addTo(map);
 
   const sidebar = document.getElementById("photo-sidebar");
   const toggleTab = document.getElementById("sidebar-toggle");
