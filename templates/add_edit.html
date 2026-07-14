@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit photo' if photo else 'Add photo' }} — {{ site_name }}{% endblock %}
+{% block content %}
+<div class="form-wrap">
+  <h1 class="page-heading">{{ 'Edit photo' if photo else 'Add a photo' }}</h1>
+  <p class="page-sub">If you know the address, geocode it first (e.g. at nominatim.openstreetmap.org) and paste the lat/lng in below. Leave blank to file it under General Photos instead.</p>
+
+  <form method="post">
+    <div class="form-field">
+      <label>Title *</label>
+      <input type="text" name="title" required value="{{ photo.title if photo else '' }}">
+    </div>
+
+    <div class="form-field">
+      <label>Description</label>
+      <textarea name="description" rows="4">{{ photo.description if photo else '' }}</textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-field">
+        <label>Date (year or "circa 1905")</label>
+        <input type="text" name="display_date" value="{{ photo.display_date if photo else '' }}">
+      </div>
+      <div class="form-field">
+        <label>Neighborhood</label>
+        <select name="neighborhood">
+          {% for hood in neighborhoods %}
+            <option value="{{ hood }}" {{ 'selected' if photo and photo.neighborhood == hood }}>{{ hood }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label>Image URL *</label>
+      <input type="text" name="image_url" required value="{{ photo.image_url if photo else '' }}">
+      <div class="form-hint">A direct link to the image file. If you have a photo saved locally, upload it somewhere first (e.g. Google Drive with public link, Dropbox, or Imgur) and paste the link here.</div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-field">
+        <label>Latitude</label>
+        <input type="text" name="latitude" value="{{ photo.latitude if photo and photo.latitude is not none else '' }}" placeholder="40.5845">
+      </div>
+      <div class="form-field">
+        <label>Longitude</label>
+        <input type="text" name="longitude" value="{{ photo.longitude if photo and photo.longitude is not none else '' }}" placeholder="-73.8168">
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label>Location precision</label>
+      <select name="location_precision">
+        <option value="exact_address" {{ 'selected' if photo and photo.location_precision == 'exact_address' }}>Exact address</option>
+        <option value="street_approximate" {{ 'selected' if photo and photo.location_precision == 'street_approximate' }}>Approximate — named street/landmark</option>
+        <option value="neighborhood_approximate" {{ 'selected' if photo and photo.location_precision == 'neighborhood_approximate' }}>Approximate — neighborhood only</option>
+      </select>
+    </div>
+
+    <div class="form-field">
+      <label>Source</label>
+      <input type="text" name="source" value="{{ photo.source if photo else 'Noel Wiggins Collection' }}">
+    </div>
+
+    <div class="form-field">
+      <label>Source URL</label>
+      <input type="text" name="source_url" value="{{ photo.source_url if photo else '' }}">
+    </div>
+
+    <div class="form-field">
+      <label>Tags (comma-separated)</label>
+      <input type="text" name="tags" value="{{ photo.tags if photo else '' }}">
+    </div>
+
+    <button type="submit" class="btn-primary">{{ 'Save changes' if photo else 'Add photo' }}</button>
+  </form>
+</div>
+{% endblock %}
