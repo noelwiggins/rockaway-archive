@@ -21,10 +21,56 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        _auto_seed_if_empty()
 
     register_cli(app)
 
     return app
+
+
+def _auto_seed_if_empty():
+    """On first boot against a fresh database, load the bundled seed files.
+    Safe to run on every startup: it's a no-op once photos already exist."""
+    from models import Photo
+
+    if Photo.query.count() > 0:
+        return
+
+    for path, added_by in [
+        ("seed_data/photos_seed.json", "Library of Congress import"),
+        ("seed_data/hammels_seed.json", "NYC Municipal Archives import"),
+    ]:
+        if not os.path.exists(path):
+            continue
+        with open(path) as f:
+            items = json.load(f)
+        for item in items:
+            sort_year = None
+            date_str = item.get("display_date", "")
+            digits = "".join(c for c in date_str[:4] if c.isdigit())
+            if len(digits) == 4:
+                sort_year = int(digits)
+
+            photo = Photo(
+                title=item["title"],
+                description=item.get("description", ""),
+                display_date=item.get("display_date", "Undated"),
+                sort_year=sort_year,
+                neighborhood=item.get("neighborhood", "Other"),
+                latitude=item.get("latitude"),
+                longitude=item.get("longitude"),
+                location_precision=item.get("location_precision"),
+                location_note=item.get("location_note"),
+                image_url=item.get("image_url"),
+                thumbnail_url=item.get("thumbnail_url"),
+                source=item.get("source", "Unknown"),
+                source_url=item.get("source_url"),
+                call_number=item.get("call_number", ""),
+                added_by=added_by,
+            )
+            db.session.add(photo)
+        db.session.commit()
+        print(f"Auto-seeded {len(items)} photos from {path}")
 
 
 def register_cli(app):
