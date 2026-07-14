@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ photo.title }} — {{ site_name }}{% endblock %}
+{% block content %}
+<div class="detail-wrap">
+  <a href="{{ url_for('main.gallery') }}" class="back-link">&larr; Back to all photos</a>
+
+  <div class="detail-grid" style="margin-top:18px;">
+    <div>
+      {% if photo.image_url %}
+        <img class="detail-img" src="{{ photo.image_url }}" alt="{{ photo.title }}">
+      {% endif %}
+    </div>
+    <div>
+      <h1 class="detail-title">{{ photo.title }}</h1>
+      <div class="detail-meta-row">{{ photo.neighborhood or 'Unclassified' }} &middot; {{ photo.display_date }}</div>
+
+      {% if photo.description %}
+      <div class="detail-desc">{{ photo.description }}</div>
+      {% endif %}
+
+      <div class="detail-field">
+        <label>Source</label>
+        <div class="value">
+          {% if photo.source_url %}<a href="{{ photo.source_url }}" target="_blank" rel="noopener" style="text-decoration:underline;">{{ photo.source }}</a>{% else %}{{ photo.source }}{% endif %}
+        </div>
+      </div>
+
+      {% if photo.call_number %}
+      <div class="detail-field">
+        <label>Call number</label>
+        <div class="value" style="font-family: var(--font-mono); font-size: 0.85rem;">{{ photo.call_number }}</div>
+      </div>
+      {% endif %}
+
+      {% if photo.is_geocoded %}
+      <div class="detail-field">
+        <label>Coordinates</label>
+        <div class="value" style="font-family: var(--font-mono); font-size: 0.85rem;">{{ "%.5f"|format(photo.latitude) }}, {{ "%.5f"|format(photo.longitude) }}</div>
+      </div>
+      {% if photo.location_note %}
+        <div class="location-note">{{ photo.location_note }}</div>
+      {% endif %}
+      <div class="detail-field" style="margin-top:10px;">
+        <a href="{{ url_for('main.map_view') }}" style="font-family: var(--font-mono); font-size:0.78rem; text-decoration:underline; color: var(--denim);">View on map &rarr;</a>
+      </div>
+      {% else %}
+        <div class="location-note">No location on file for this photo yet.</div>
+      {% endif %}
+
+      {% if photo.tag_list %}
+      <div class="detail-field" style="margin-top:14px;">
+        <label>Tags</label>
+        <div class="value">{{ photo.tag_list | join(', ') }}</div>
+      </div>
+      {% endif %}
+
+      {% if is_admin %}
+      <div class="detail-actions">
+        <a href="{{ url_for('main.edit_photo', photo_id=photo.id) }}">Edit</a>
+        <form method="post" action="{{ url_for('main.delete_photo', photo_id=photo.id) }}" onsubmit="return confirm('Delete this photo? This cannot be undone.');" style="display:inline;">
+          <button type="submit" class="btn-danger">Delete</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
