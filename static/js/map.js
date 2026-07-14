@@ -14,9 +14,24 @@
     { attribution: "Esri, Maxar, Earthstar Geographics", maxZoom: 19 }
   );
 
+  const aerial1924Layer = L.tileLayer(
+    "https://maps.nyc.gov/xyz/1.0.0/photo/1924/{z}/{x}/{y}.png8",
+    { attribution: "NYC DoITT — 1924 aerial survey", maxZoom: 19, minZoom: 10 }
+  );
+
+  const aerial1951Layer = L.tileLayer(
+    "https://maps.nyc.gov/xyz/1.0.0/photo/1951/{z}/{x}/{y}.png8",
+    { attribution: "NYC DoITT — 1951 aerial survey", maxZoom: 19, minZoom: 10 }
+  );
+
   darkLayer.addTo(map);
 
-  const baseLayers = { "Dark": darkLayer, "Satellite": satelliteLayer };
+  const baseLayers = {
+    "Dark": darkLayer,
+    "Satellite (current)": satelliteLayer,
+    "Aerial — 1924": aerial1924Layer,
+    "Aerial — 1951": aerial1951Layer,
+  };
 
   // Sanborn Fire Insurance Map overlays — raw public-domain sheet scans from the
   // Library of Congress, placed at their approximate historical extent. These
