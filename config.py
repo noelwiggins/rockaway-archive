@@ -5,9 +5,13 @@ class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-key-change-in-production")
 
     _db_url = os.environ.get("DATABASE_URL", "sqlite:///rockaway.db")
-    # Railway/Heroku-style URLs sometimes use postgres:// which SQLAlchemy 1.4+ rejects
+    # Railway/Heroku-style URLs use postgres:// or postgresql://; force the
+    # psycopg3 dialect, which is more portable than psycopg2 on Railway's
+    # Nixpacks build image (psycopg2-binary fails to find libpq.so.5 there).
     if _db_url.startswith("postgres://"):
-        _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+        _db_url = _db_url.replace("postgres://", "postgresql+psycopg://", 1)
+    elif _db_url.startswith("postgresql://"):
+        _db_url = _db_url.replace("postgresql://", "postgresql+psycopg://", 1)
     SQLALCHEMY_DATABASE_URI = _db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
