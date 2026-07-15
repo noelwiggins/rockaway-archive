@@ -242,6 +242,20 @@ def image_proxy(io_id):
     )
 
 
+@main_bp.route("/admin/fix-thumbnails", methods=["POST"])
+def fix_thumbnails():
+    if not is_admin():
+        return {"error": "not authorized"}, 403
+
+    photos = Photo.query.filter(Photo.thumbnail_url.contains("_150px")).all()
+    fixed = 0
+    for p in photos:
+        p.thumbnail_url = p.image_url
+        fixed += 1
+    db.session.commit()
+    return {"fixed": fixed}
+
+
 @main_bp.route("/admin/dedupe", methods=["POST"])
 def dedupe_photos():
     if not is_admin():
