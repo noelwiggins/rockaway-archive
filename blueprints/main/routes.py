@@ -17,6 +17,7 @@ def inject_globals():
         "site_name": current_app.config["SITE_NAME"],
         "is_admin": is_admin(),
         "neighborhoods": NEIGHBORHOODS,
+        "asset_version": current_app.config["ASSET_VERSION"],
     }
 
 
