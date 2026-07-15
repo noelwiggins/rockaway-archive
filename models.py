@@ -39,6 +39,29 @@ class Photo(db.Model):
     def tag_list(self):
         return [t.strip() for t in (self.tags or "").split(",") if t.strip()]
 
+    @staticmethod
+    def _proxied(url, kind):
+        """Rewrites nycrecords.access.preservica.com URLs to go through our
+        own /img/ proxy — direct hotlinking to Preservica intermittently
+        fails in browsers (see blueprints/main/routes.py: image_proxy)."""
+        if not url:
+            return url
+        if "nycrecords.access.preservica.com/download/" in url:
+            import re
+            m = re.search(r"/download/(?:thumbnail|file)/([^?]+)", url)
+            if m:
+                io_id = m.group(1)
+                return f"/img/{io_id}?kind={kind}"
+        return url
+
+    @property
+    def display_image_url(self):
+        return self._proxied(self.image_url, "file")
+
+    @property
+    def display_thumbnail_url(self):
+        return self._proxied(self.thumbnail_url or self.image_url, "thumbnail")
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -50,8 +73,8 @@ class Photo(db.Model):
             "longitude": self.longitude,
             "location_precision": self.location_precision,
             "location_note": self.location_note,
-            "image_url": self.image_url,
-            "thumbnail_url": self.thumbnail_url or self.image_url,
+            "image_url": self.display_image_url,
+            "thumbnail_url": self.display_thumbnail_url,
             "source": self.source,
             "source_url": self.source_url,
             "is_geocoded": self.is_geocoded,
