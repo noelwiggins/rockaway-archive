@@ -41,20 +41,20 @@
   const sanbornLayerGroup = L.layerGroup();
 
   const SANBORN_SHEETS = [
-    { name: "Sanborn 1894 — Sheet 2", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0002/full/pct:25/0/default.jpg", bounds: [[40.57987, -73.83288], [40.58452, -73.82995]] },
-    { name: "Sanborn 1894 — Sheet 3", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0003/full/pct:25/0/default.jpg", bounds: [[40.57962, -73.8358], [40.58427, -73.83288]] },
-    { name: "Sanborn 1894 — Sheet 4", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0004/full/pct:25/0/default.jpg", bounds: [[40.57932, -73.83866], [40.58402, -73.8358]] },
-    { name: "Sanborn 1894 — Sheet 5", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0005/full/pct:25/0/default.jpg", bounds: [[40.5787, -73.84106], [40.58372, -73.83866]] },
-    { name: "Sanborn 1894 — Sheet 6", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0006/full/pct:25/0/default.jpg", bounds: [[40.57808, -73.84347], [40.5831, -73.84106]] },
-    { name: "Sanborn 1894 — Sheet 7", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0007/full/pct:25/0/default.jpg", bounds: [[40.5868, -73.80681], [40.59206, -73.80507]] },
-    { name: "Sanborn 1894 — Sheet 8", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0008/full/pct:25/0/default.jpg", bounds: [[40.5868, -73.80896], [40.5913, -73.80681]] },
-    { name: "Sanborn 1894 — Sheet 9", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0009/full/pct:25/0/default.jpg", bounds: [[40.5869, -73.81111], [40.5914, -73.80896]] },
-    { name: "Sanborn 1894 — Sheet 10", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0010/full/pct:25/0/default.jpg", bounds: [[40.587, -73.81326], [40.5915, -73.81111]] },
-    { name: "Sanborn 1894 — Sheet 11", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0011/full/pct:25/0/default.jpg", bounds: [[40.58643, -73.81505], [40.5915, -73.81326]] },
-    { name: "Sanborn 1894 — Sheet 12", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0012/full/pct:25/0/default.jpg", bounds: [[40.58566, -73.8168], [40.59083, -73.81505]] },
-    { name: "Sanborn 1894 — Sheet 13", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0013/full/pct:25/0/default.jpg", bounds: [[40.58488, -73.81854], [40.59006, -73.8168]] },
-    { name: "Sanborn 1894 — Sheet 14", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0014/full/pct:25/0/default.jpg", bounds: [[40.58889, -73.79719], [40.59458, -73.78874]] },
-    { name: "Sanborn 1894 — Sheet 15", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0015/full/pct:25/0/default.jpg", bounds: [[40.58855, -73.8037], [40.59329, -73.79719]] },
+{ name: "Sanborn 1894 — Sheet 2", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0002/full/pct:25/0/default.jpg", bounds: [[40.580875, -73.83288], [40.583515, -73.82995]] },
+    { name: "Sanborn 1894 — Sheet 3", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0003/full/pct:25/0/default.jpg", bounds: [[40.58063, -73.8358], [40.58326, -73.83288]] },
+    { name: "Sanborn 1894 — Sheet 4", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0004/full/pct:25/0/default.jpg", bounds: [[40.580382, -73.83866], [40.582958, -73.8358]] },
+    { name: "Sanborn 1894 — Sheet 5", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0005/full/pct:25/0/default.jpg", bounds: [[40.580129, -73.84106], [40.582291, -73.83866]] },
+    { name: "Sanborn 1894 — Sheet 6", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0006/full/pct:25/0/default.jpg", bounds: [[40.579505, -73.84347], [40.581675, -73.84106]] },
+    { name: "Sanborn 1894 — Sheet 7", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0007/full/pct:25/0/default.jpg", bounds: [[40.588646, -73.80681], [40.590214, -73.80507]] },
+    { name: "Sanborn 1894 — Sheet 8", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0008/full/pct:25/0/default.jpg", bounds: [[40.588082, -73.80896], [40.590018, -73.80681]] },
+    { name: "Sanborn 1894 — Sheet 9", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0009/full/pct:25/0/default.jpg", bounds: [[40.588182, -73.81111], [40.590118, -73.80896]] },
+    { name: "Sanborn 1894 — Sheet 10", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0010/full/pct:25/0/default.jpg", bounds: [[40.588282, -73.81326], [40.590218, -73.81111]] },
+    { name: "Sanborn 1894 — Sheet 11", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0011/full/pct:25/0/default.jpg", bounds: [[40.588159, -73.81505], [40.589771, -73.81326]] },
+    { name: "Sanborn 1894 — Sheet 12", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0012/full/pct:25/0/default.jpg", bounds: [[40.587457, -73.8168], [40.589033, -73.81505]] },
+    { name: "Sanborn 1894 — Sheet 13", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0013/full/pct:25/0/default.jpg", bounds: [[40.586686, -73.81854], [40.588254, -73.8168]] },
+    { name: "Sanborn 1894 — Sheet 14", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0014/full/pct:25/0/default.jpg", bounds: [[40.58793, -73.79719], [40.59554, -73.78874]] },
+    { name: "Sanborn 1894 — Sheet 15", url: "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380m:g3804m:g3804rm:g3804rm_g062181894:06218_1894-0015/full/pct:25/0/default.jpg", bounds: [[40.587989, -73.8037], [40.593851, -73.79719]] },
   ];
 
   SANBORN_SHEETS.forEach(function (sheet) {
