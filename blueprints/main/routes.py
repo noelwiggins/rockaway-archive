@@ -283,22 +283,6 @@ def dedupe_photos():
     return {"removed": removed, "remaining": Photo.query.count()}
 
 
-@main_bp.route("/admin/debug-template")
-def debug_template():
-    if not is_admin():
-        return {"error": "not authorized"}, 403
-    import os
-    path = os.path.join(os.path.dirname(__file__), "..", "..", "templates", "map.html")
-    with open(path) as f:
-        content = f.read()
-    return {
-        "has_asset_version": "asset_version" in content,
-        "map_js_line": [l for l in content.splitlines() if "map.js" in l],
-        "config_asset_version": current_app.config.get("ASSET_VERSION"),
-        "file_mtime": os.path.getmtime(path),
-    }
-
-
 @main_bp.route("/admin/fix-tax-addresses", methods=["POST"])
 def fix_tax_addresses():
     if not is_admin():
