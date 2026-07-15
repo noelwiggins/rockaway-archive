@@ -1,8 +1,13 @@
 import os
-
+import time
 
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-key-change-in-production")
+
+    # Cache-busting token for static assets — changes on every deploy (new
+    # container boot), so browsers/CDNs (e.g. Cloudflare in front of the
+    # custom domain) can't serve a stale cached JS/CSS file across deploys.
+    ASSET_VERSION = os.environ.get("RAILWAY_DEPLOYMENT_ID", str(int(time.time())))
 
     _db_url = os.environ.get("DATABASE_URL", "sqlite:///rockaway.db")
     # Railway/Heroku-style URLs use postgres:// or postgresql://; force the
