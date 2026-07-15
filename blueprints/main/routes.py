@@ -174,6 +174,37 @@ def delete_photo(photo_id):
     return redirect(url_for("main.gallery"))
 
 
+@main_bp.route("/img/<path:io_id>")
+def image_proxy(io_id):
+    """Proxies images hosted on nycrecords.access.preservica.com through our
+    own server. Direct browser hotlinking to Preservica intermittently fails
+    (they run Cloudflare Bot Management, which can block/challenge external
+    <img> requests even though single server-side fetches succeed) — fetching
+    server-side and streaming the bytes through our own domain sidesteps that."""
+    import requests
+    from flask import Response
+
+    kind = request.args.get("kind", "thumbnail")  # "thumbnail" or "file"
+    if kind == "file":
+        upstream = f"https://nycrecords.access.preservica.com/download/file/{io_id}"
+    else:
+        upstream = f"https://nycrecords.access.preservica.com/download/thumbnail/{io_id}?fallback-thumbnail=1"
+
+    try:
+        r = requests.get(upstream, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
+        }, timeout=20)
+        r.raise_for_status()
+    except Exception:
+        return "", 502
+
+    return Response(
+        r.content,
+        mimetype=r.headers.get("Content-Type", "image/jpeg"),
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
 @main_bp.route("/admin/fix-tax-addresses", methods=["POST"])
 def fix_tax_addresses():
     if not is_admin():
