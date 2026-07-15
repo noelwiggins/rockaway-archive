@@ -174,17 +174,30 @@ def delete_photo(photo_id):
     return redirect(url_for("main.gallery"))
 
 
+_image_cache = {}
+_IMAGE_CACHE_MAX = 500
+
+
 @main_bp.route("/img/<path:io_id>")
 def image_proxy(io_id):
     """Proxies images hosted on nycrecords.access.preservica.com through our
     own server. Direct browser hotlinking to Preservica intermittently fails
     (they run Cloudflare Bot Management, which can block/challenge external
     <img> requests even though single server-side fetches succeed) — fetching
-    server-side and streaming the bytes through our own domain sidesteps that."""
+    server-side and streaming the bytes through our own domain sidesteps that.
+    Cached in memory since a gallery/sidebar can request many images at once
+    and repeat views of the same photo shouldn't re-fetch from Preservica."""
     import requests
     from flask import Response
 
     kind = request.args.get("kind", "thumbnail")  # "thumbnail" or "file"
+    cache_key = f"{io_id}:{kind}"
+
+    cached = _image_cache.get(cache_key)
+    if cached:
+        content, content_type = cached
+        return Response(content, mimetype=content_type, headers={"Cache-Control": "public, max-age=86400"})
+
     if kind == "file":
         upstream = f"https://nycrecords.access.preservica.com/download/file/{io_id}"
     else:
@@ -193,14 +206,20 @@ def image_proxy(io_id):
     try:
         r = requests.get(upstream, headers={
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
-        }, timeout=20)
+        }, timeout=15)
         r.raise_for_status()
     except Exception:
         return "", 502
 
+    content_type = r.headers.get("Content-Type", "image/jpeg")
+
+    if len(_image_cache) >= _IMAGE_CACHE_MAX:
+        _image_cache.pop(next(iter(_image_cache)))
+    _image_cache[cache_key] = (r.content, content_type)
+
     return Response(
         r.content,
-        mimetype=r.headers.get("Content-Type", "image/jpeg"),
+        mimetype=content_type,
         headers={"Cache-Control": "public, max-age=86400"},
     )
 
