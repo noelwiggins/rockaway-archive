@@ -211,14 +211,32 @@ def image_proxy(io_id):
     except Exception:
         return "", 502
 
+    content = r.content
     content_type = r.headers.get("Content-Type", "image/jpeg")
+
+    # Browsers can't display TIFF inline — some archives (e.g. NYC tax photo
+    # masters) serve TIFF for the full-size "file" download. Convert to JPEG.
+    is_tiff = content_type in ("image/tiff", "image/tif") or content[:4] in (b"II*\x00", b"MM\x00*")
+    if is_tiff:
+        from PIL import Image
+        import io as _io
+        try:
+            im = Image.open(_io.BytesIO(content))
+            if im.mode != "RGB":
+                im = im.convert("RGB")
+            buf = _io.BytesIO()
+            im.save(buf, format="JPEG", quality=88)
+            content = buf.getvalue()
+            content_type = "image/jpeg"
+        except Exception:
+            pass  # fall back to serving the original bytes if conversion fails
 
     if len(_image_cache) >= _IMAGE_CACHE_MAX:
         _image_cache.pop(next(iter(_image_cache)))
-    _image_cache[cache_key] = (r.content, content_type)
+    _image_cache[cache_key] = (content, content_type)
 
     return Response(
-        r.content,
+        content,
         mimetype=content_type,
         headers={"Cache-Control": "public, max-age=86400"},
     )
