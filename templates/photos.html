@@ -33,8 +33,8 @@
         <span class="pm-date">{{ photo.display_date }}</span>
       </div>
       <div class="postcard-img-wrap">
-        {% if photo.thumbnail_url or photo.image_url %}
-          <img src="{{ photo.thumbnail_url or photo.image_url }}" alt="{{ photo.title }}" loading="lazy">
+        {% if photo.display_thumbnail_url or photo.display_image_url %}
+          <img src="{{ photo.display_thumbnail_url or photo.display_image_url }}" alt="{{ photo.title }}" loading="lazy">
         {% endif %}
       </div>
       <div class="postcard-body">
