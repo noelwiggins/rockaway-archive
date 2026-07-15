@@ -12,7 +12,6 @@ than the real address. This script:
 """
 import re
 import sys
-import numpy as np
 
 sys.path.insert(0, "scripts")
 from geocode_utils import interpolate_beach_street, neighborhood_for_beach_number, jitter
