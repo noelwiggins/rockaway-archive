@@ -81,11 +81,13 @@
   function openSidebar() {
     sidebar.classList.remove("collapsed");
     toggleTab.style.display = "none";
+    setTimeout(function () { map.invalidateSize(); }, 220);
   }
   function closeSidebar() {
     sidebar.classList.add("collapsed");
     toggleTab.style.display = "block";
     currentGroup = null;
+    setTimeout(function () { map.invalidateSize(); }, 220);
   }
   toggleTab.addEventListener("click", openSidebar);
 
