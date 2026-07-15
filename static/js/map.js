@@ -24,6 +24,15 @@
     { attribution: "NYC DoITT — 1951 aerial survey", maxZoom: 19, minZoom: 10 }
   );
 
+  const aerialYears = [1996, 2004, 2006, 2008, 2010, 2012, 2014, 2016, 2018];
+  const aerialLayersByYear = {};
+  aerialYears.forEach(function (year) {
+    aerialLayersByYear[year] = L.tileLayer(
+      "https://maps.nyc.gov/xyz/1.0.0/photo/" + year + "/{z}/{x}/{y}.png8",
+      { attribution: "NYC DoITT — " + year + " aerial survey", maxZoom: 19, minZoom: 10 }
+    );
+  });
+
   darkLayer.addTo(map);
 
   const baseLayers = {
@@ -32,6 +41,9 @@
     "Aerial — 1924": aerial1924Layer,
     "Aerial — 1951": aerial1951Layer,
   };
+  aerialYears.forEach(function (year) {
+    baseLayers["Aerial — " + year] = aerialLayersByYear[year];
+  });
 
   // Sanborn Fire Insurance Map overlays — raw public-domain sheet scans from the
   // Library of Congress, placed at their approximate historical extent. These
