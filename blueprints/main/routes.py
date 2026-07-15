@@ -174,6 +174,37 @@ def delete_photo(photo_id):
     return redirect(url_for("main.gallery"))
 
 
+@main_bp.route("/admin/fix-tax-addresses", methods=["POST"])
+def fix_tax_addresses():
+    if not is_admin():
+        return {"error": "not authorized"}, 403
+
+    import sys
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "scripts"))
+    from fix_tax_photo_addresses import classify_and_fix
+
+    all_tax = Photo.query.filter(
+        Photo.source == "NYC Municipal Archives",
+        Photo.title.contains("Rockaway Beach Boulevard"),
+    ).all()
+
+    deleted, fixed, skipped = 0, 0, 0
+    for p in all_tax:
+        result = classify_and_fix(p)
+        if result == "delete":
+            db.session.delete(p)
+            deleted += 1
+        elif result is None:
+            skipped += 1
+        else:
+            for k, v in result.items():
+                setattr(p, k, v)
+            fixed += 1
+    db.session.commit()
+    return {"deleted": deleted, "fixed": fixed, "skipped": skipped}
+
+
 @main_bp.route("/admin/fix-geocoding", methods=["POST"])
 def fix_geocoding():
     if not is_admin():
