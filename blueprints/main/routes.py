@@ -242,6 +242,32 @@ def image_proxy(io_id):
     )
 
 
+@main_bp.route("/admin/dedupe", methods=["POST"])
+def dedupe_photos():
+    if not is_admin():
+        return {"error": "not authorized"}, 403
+
+    from collections import defaultdict
+
+    all_photos = Photo.query.all()
+    by_identity = defaultdict(list)
+    for p in all_photos:
+        key = (p.source, p.source_url or p.image_url)
+        by_identity[key].append(p)
+
+    removed = 0
+    for key, group in by_identity.items():
+        if len(group) <= 1:
+            continue
+        group.sort(key=lambda p: p.id)
+        for dupe in group[1:]:
+            db.session.delete(dupe)
+            removed += 1
+
+    db.session.commit()
+    return {"removed": removed, "remaining": Photo.query.count()}
+
+
 @main_bp.route("/admin/fix-tax-addresses", methods=["POST"])
 def fix_tax_addresses():
     if not is_admin():
