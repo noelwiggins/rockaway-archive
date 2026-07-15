@@ -40,6 +40,6 @@
   const GROUPED_PHOTOS_URL = "{{ url_for('api.photos_grouped', neighborhood=selected_neighborhood) }}";
   const PHOTO_DETAIL_BASE = "{{ url_for('main.photo_detail', photo_id=0) }}".replace('/0', '/');
 </script>
-<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+<script src="{{ url_for('static', filename='js/map.js') }}?v={{ asset_version }}"></script>
 {% endblock %}
 
