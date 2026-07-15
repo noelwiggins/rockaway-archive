@@ -228,8 +228,8 @@ def image_proxy(io_id):
             im.save(buf, format="JPEG", quality=88)
             content = buf.getvalue()
             content_type = "image/jpeg"
-        except Exception:
-            pass  # fall back to serving the original bytes if conversion fails
+        except Exception as e:
+            print(f"TIFF CONVERSION FAILED for {io_id}: {type(e).__name__}: {e}", flush=True)
 
     if len(_image_cache) >= _IMAGE_CACHE_MAX:
         _image_cache.pop(next(iter(_image_cache)))
