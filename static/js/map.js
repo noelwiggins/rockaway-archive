@@ -124,11 +124,22 @@
     {
       name: "USGS 1954-01-08 — Frame 79 (Rockaway Beach/Hammels)",
       url: "/static/usgs_aerials/1954-01-08_frame79.webp",
-      bounds: [[40.562238, -73.85612], [40.603694, -73.801746]],
+      // Real 3-corner placement (topLeft, topRight, bottomLeft), not an
+      // axis-aligned box — the flight strip is rotated ~2° off true north,
+      // so a simple rectangular bounds would distort and misplace it.
+      topLeft: [40.603694, -73.854215],
+      topRight: [40.602229, -73.801746],
+      bottomLeft: [40.563702, -73.85612],
     },
   ];
   USGS_1954_FRAMES.forEach(function (frame) {
-    const overlay = L.imageOverlay(frame.url, frame.bounds, { opacity: 0.9 });
+    const overlay = L.imageOverlay.rotated(
+      frame.url,
+      L.latLng(frame.topLeft),
+      L.latLng(frame.topRight),
+      L.latLng(frame.bottomLeft),
+      { opacity: 0.9 }
+    );
     overlay.addTo(usgs1954LayerGroup);
   });
 
