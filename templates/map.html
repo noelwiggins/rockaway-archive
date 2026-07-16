@@ -36,7 +36,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://unpkg.com/leaflet-imageoverlay-rotated@0.1.5/Leaflet.ImageOverlay.Rotated.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-imageoverlay-rotated/Leaflet.ImageOverlay.Rotated.js"></script>
 <script>
   const GROUPED_PHOTOS_URL = "{{ url_for('api.photos_grouped', neighborhood=selected_neighborhood) }}";
   const PHOTO_DETAIL_BASE = "{{ url_for('main.photo_detail', photo_id=0) }}".replace('/0', '/');
