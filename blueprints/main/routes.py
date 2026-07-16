@@ -181,28 +181,29 @@ _IMAGE_CACHE_MAX = 500
 
 @main_bp.route("/img/<path:io_id>")
 def image_proxy(io_id):
-    """Proxies images hosted on nycrecords.access.preservica.com through our
-    own server. Direct browser hotlinking to Preservica intermittently fails
-    (they run Cloudflare Bot Management, which can block/challenge external
-    <img> requests even though single server-side fetches succeed) — fetching
-    server-side and streaming the bytes through our own domain sidesteps that.
-    Cached in memory since a gallery/sidebar can request many images at once
-    and repeat views of the same photo shouldn't re-fetch from Preservica."""
+    """Proxies images hosted on external archive domains through our own
+    server — both nycrecords.access.preservica.com (Cloudflare bot
+    protection blocks direct browser hotlinks) and digitalarchives
+    .queenslibrary.org (blocked by a WAF for direct requests from most
+    networks, but reachable from Railway's egress)."""
     import requests
     from flask import Response
 
-    kind = request.args.get("kind", "thumbnail")  # "thumbnail" or "file"
-    cache_key = f"{io_id}:{kind}"
+    kind = request.args.get("kind", "thumbnail")
+    source = request.args.get("source", "preservica")
 
+    if source == "queenslibrary":
+        upstream = f"http://digitalarchives.queenslibrary.org:8001/vital/access/services/Thumbnail/{io_id}"
+    elif kind == "file":
+        upstream = f"https://nycrecords.access.preservica.com/download/file/{io_id}"
+    else:
+        upstream = f"https://nycrecords.access.preservica.com/download/thumbnail/{io_id}?fallback-thumbnail=1"
+
+    cache_key = f"{source}:{io_id}:{kind}"
     cached = _image_cache.get(cache_key)
     if cached:
         content, content_type = cached
         return Response(content, mimetype=content_type, headers={"Cache-Control": "public, max-age=86400"})
-
-    if kind == "file":
-        upstream = f"https://nycrecords.access.preservica.com/download/file/{io_id}"
-    else:
-        upstream = f"https://nycrecords.access.preservica.com/download/thumbnail/{io_id}?fallback-thumbnail=1"
 
     try:
         r = requests.get(upstream, headers={
