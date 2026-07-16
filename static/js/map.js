@@ -242,6 +242,27 @@
     overlay.addTo(sanborn1912LayerGroup);
   });
 
+  const noiseLayerGroup = L.layerGroup();
+  fetch("/api/noise")
+    .then(function (r) { return r.json(); })
+    .then(function (complaints) {
+      complaints.forEach(function (c) {
+        const marker = L.circleMarker([c.latitude, c.longitude], {
+          radius: 4,
+          color: "#c1440e",
+          fillColor: "#e07a5f",
+          fillOpacity: 0.6,
+          weight: 1,
+        });
+        marker.bindPopup(
+          "<strong>" + c.type + "</strong><br>" +
+          new Date(c.date + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+        );
+        marker.addTo(noiseLayerGroup);
+      });
+    })
+    .catch(function (err) { console.error("Failed to load noise data:", err); });
+
   const salesLayerGroup = L.layerGroup();
   fetch("/api/sales")
     .then(function (r) { return r.json(); })
@@ -288,6 +309,7 @@
   });
 
   const overlayLayers = {
+    "311 noise complaints": noiseLayerGroup,
     "NYC zoning districts": zoningLayer,
     "FEMA flood zones": floodZoneLayer,
     "Recent property sales": salesLayerGroup,
