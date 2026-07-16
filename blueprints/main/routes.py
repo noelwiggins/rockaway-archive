@@ -194,10 +194,13 @@ def image_proxy(io_id):
 
     if source == "queenslibrary":
         upstream = f"http://digitalarchives.queenslibrary.org:8001/vital/access/services/Thumbnail/{io_id}"
+        extra_headers = {"Referer": "http://digitalarchives.queenslibrary.org/"}
     elif kind == "file":
         upstream = f"https://nycrecords.access.preservica.com/download/file/{io_id}"
+        extra_headers = {}
     else:
         upstream = f"https://nycrecords.access.preservica.com/download/thumbnail/{io_id}?fallback-thumbnail=1"
+        extra_headers = {}
 
     cache_key = f"{source}:{io_id}:{kind}"
     cached = _image_cache.get(cache_key)
@@ -206,9 +209,11 @@ def image_proxy(io_id):
         return Response(content, mimetype=content_type, headers={"Cache-Control": "public, max-age=86400"})
 
     try:
-        r = requests.get(upstream, headers={
+        headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
-        }, timeout=15)
+        }
+        headers.update(extra_headers)
+        r = requests.get(upstream, headers=headers, timeout=15)
         r.raise_for_status()
     except Exception:
         return "", 502
