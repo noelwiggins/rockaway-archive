@@ -125,9 +125,23 @@
     overlay.addTo(sanborn1901LayerGroup);
   });
 
+  const usgs1954LayerGroup = L.layerGroup();
+  const USGS_1954_FRAMES = [
+    {
+      name: "USGS 1954-01-08 — Frame 79 (Rockaway Beach/Hammels)",
+      url: "/static/usgs_aerials/1954-01-08_frame79.webp",
+      bounds: [[40.562238, -73.85612], [40.603694, -73.801746]],
+    },
+  ];
+  USGS_1954_FRAMES.forEach(function (frame) {
+    const overlay = L.imageOverlay(frame.url, frame.bounds, { opacity: 0.9 });
+    overlay.addTo(usgs1954LayerGroup);
+  });
+
   const overlayLayers = {
     "Sanborn maps — 1894": sanbornLayerGroup,
     "Sanborn maps — 1901 (Far Rockaway)": sanborn1901LayerGroup,
+    "USGS aerial frames — 1954 (high-res)": usgs1954LayerGroup,
   };
 
   L.control.layers(baseLayers, overlayLayers, { collapsed: true, position: "topright" }).addTo(map);
