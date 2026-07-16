@@ -6,6 +6,50 @@ api_bp = Blueprint("api", __name__)
 _sales_cache = {}
 
 
+@api_bp.route("/noise")
+def noise():
+    """Recent noise complaints from NYC's 311 system for the Rockaway zip
+    codes — a real, free proxy for neighborhood noise patterns (not literal
+    decibel readings, but genuine complaint locations/types/dates)."""
+    import requests
+
+    cache_key = "noise_complaints"
+    cached = _sales_cache.get(cache_key)
+    if cached and (time.time() - cached["time"]) < 21600:
+        return jsonify(cached["data"])
+
+    try:
+        resp = requests.get(
+            "https://data.cityofnewyork.us/resource/erm2-nwe9.json",
+            params={
+                "$where": (
+                    "incident_zip in('11693','11694','11691','11692') "
+                    "AND complaint_type in('Noise - Residential','Noise - Street/Sidewalk',"
+                    "'Noise - Vehicle','Noise - Commercial','Noise') "
+                    "AND created_date > '2025-01-01' AND latitude IS NOT NULL"
+                ),
+                "$select": "complaint_type,latitude,longitude,created_date",
+                "$limit": 5000,
+            },
+            timeout=20,
+        )
+        complaints = resp.json()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
+
+    out = [
+        {
+            "type": c["complaint_type"],
+            "date": c["created_date"][:10],
+            "latitude": float(c["latitude"]),
+            "longitude": float(c["longitude"]),
+        }
+        for c in complaints
+    ]
+    _sales_cache[cache_key] = {"time": time.time(), "data": out}
+    return jsonify(out)
+
+
 @api_bp.route("/sales")
 def sales():
     """Recent Rockaway-area property sales from NYC's ACRIS system (free,
