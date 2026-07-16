@@ -289,22 +289,6 @@ def dedupe_photos():
     return {"removed": removed, "remaining": Photo.query.count()}
 
 
-@main_bp.route("/admin/test-fetch")
-def test_fetch():
-    if not is_admin():
-        return {"error": "not authorized"}, 403
-    import requests
-    url = request.args.get("url")
-    try:
-        r = requests.get(url, headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-            "Referer": "http://digitalarchives.queenslibrary.org/",
-        }, timeout=20)
-        return {"status": r.status_code, "content_type": r.headers.get("Content-Type"), "length": len(r.content), "snippet": r.text[:500]}
-    except Exception as e:
-        return {"error": str(e)}
-
-
 @main_bp.route("/admin/fix-tax-addresses", methods=["POST"])
 def fix_tax_addresses():
     if not is_admin():
