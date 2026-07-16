@@ -27,9 +27,18 @@ BEACH_REFERENCE_POINTS = sorted(
 def interpolate_beach_street(n):
     pts = BEACH_REFERENCE_POINTS
     if n <= pts[0][0]:
-        return pts[0][1], pts[0][2]
+        # Extrapolate using the slope of the first two reference points,
+        # rather than clamping — clamping collapses every out-of-range
+        # sheet onto the exact same coordinate.
+        n0, lat0, lng0 = pts[0]
+        n1, lat1, lng1 = pts[1]
+        frac = (n - n0) / (n1 - n0)
+        return lat0 + (lat1 - lat0) * frac, lng0 + (lng1 - lng0) * frac
     if n >= pts[-1][0]:
-        return pts[-1][1], pts[-1][2]
+        n0, lat0, lng0 = pts[-2]
+        n1, lat1, lng1 = pts[-1]
+        frac = (n - n0) / (n1 - n0)
+        return lat0 + (lat1 - lat0) * frac, lng0 + (lng1 - lng0) * frac
     for i in range(len(pts) - 1):
         n0, lat0, lng0 = pts[i]
         n1, lat1, lng1 = pts[i + 1]
