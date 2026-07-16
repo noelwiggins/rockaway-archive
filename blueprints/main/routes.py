@@ -55,10 +55,16 @@ def gallery():
     elif show == "ungeocoded":
         query = query.filter(Photo.latitude.is_(None))
     if search:
-        like = f"%{search}%"
-        query = query.filter(
-            db.or_(Photo.title.ilike(like), Photo.description.ilike(like), Photo.tags.ilike(like))
-        )
+        terms = _search_variants(search)
+        conditions = []
+        for term in terms:
+            like = f"%{term}%"
+            conditions.append(Photo.title.ilike(like))
+            conditions.append(Photo.description.ilike(like))
+            conditions.append(Photo.tags.ilike(like))
+            conditions.append(Photo.call_number.ilike(like))
+            conditions.append(Photo.neighborhood.ilike(like))
+        query = query.filter(db.or_(*conditions))
 
     photos = query.order_by(Photo.sort_year.asc().nullslast(), Photo.title.asc()).all()
 
@@ -69,6 +75,37 @@ def gallery():
         show=show,
         search=search,
     )
+
+
+def _search_variants(raw):
+    """Generates a few normalized variants of a search term so common address
+    abbreviations match regardless of which form the user or the record
+    uses (e.g. "84th St" should find "Beach 84th Street" and vice versa)."""
+    import re
+
+    variants = {raw}
+    s = raw
+
+    # Expand/contract common street-type abbreviations both ways
+    swaps = [
+        (r'\bblvd\.?\b', 'boulevard'), (r'\bboulevard\b', 'blvd'),
+        (r'\bst\.?\b', 'street'), (r'\bstreet\b', 'st'),
+        (r'\bave\.?\b', 'avenue'), (r'\bavenue\b', 'ave'),
+        (r'\bpkwy\.?\b', 'parkway'), (r'\bparkway\b', 'pkwy'),
+        (r'\bdr\.?\b', 'drive'), (r'\bdrive\b', 'dr'),
+    ]
+    for pattern, repl in swaps:
+        if re.search(pattern, s, re.IGNORECASE):
+            variants.add(re.sub(pattern, repl, s, flags=re.IGNORECASE))
+
+    # If it's a bare "Beach NN" style number, also try with ordinal suffix
+    m = re.search(r'\b(\d+)(st|nd|rd|th)?\b', s, re.IGNORECASE)
+    if m and not m.group(2):
+        n = int(m.group(1))
+        suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+        variants.add(s[:m.start(1)] + f"{n}{suffix}" + s[m.end(1):])
+
+    return variants
 
 
 @main_bp.route("/photo/<int:photo_id>")
