@@ -268,6 +268,19 @@
     })
     .catch(function (err) { console.error("Failed to load sales data:", err); });
 
+  const zoningLayer = L.esri.featureLayer({
+    url: "https://services5.arcgis.com/GfwWNkhOj9bNBqoJ/arcgis/rest/services/nyzd/FeatureServer/0",
+    style: function () {
+      return { color: "#7b6fd1", weight: 1, fillOpacity: 0.12, opacity: 0.6 };
+    },
+    onEachFeature: function (feature, layer) {
+      const zone = feature.properties && feature.properties.ZONEDIST;
+      if (zone) {
+        layer.bindPopup("<strong>Zoning district:</strong> " + zone);
+      }
+    },
+  });
+
   const floodZoneLayer = L.esri.dynamicMapLayer({
     url: "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer",
     layers: [28], // Flood Hazard Zones
@@ -275,6 +288,7 @@
   });
 
   const overlayLayers = {
+    "NYC zoning districts": zoningLayer,
     "FEMA flood zones": floodZoneLayer,
     "Recent property sales": salesLayerGroup,
     "Sanborn maps — 1894": sanbornLayerGroup,
