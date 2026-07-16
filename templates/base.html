@@ -26,6 +26,10 @@
         <a href="{{ url_for('main.admin_login') }}" class="nav-muted">Sign in</a>
       {% endif %}
     </nav>
+    <form class="header-search" action="{{ url_for('main.gallery') }}" method="get">
+      <input type="text" name="q" placeholder="Search address, title, description&hellip;" value="{{ request.args.get('q', '') }}">
+      <button type="submit" aria-label="Search">&#9906;</button>
+    </form>
   </div>
 </header>
 
