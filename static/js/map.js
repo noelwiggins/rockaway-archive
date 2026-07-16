@@ -242,7 +242,34 @@
     overlay.addTo(sanborn1912LayerGroup);
   });
 
+  const salesLayerGroup = L.layerGroup();
+  fetch("/api/sales")
+    .then(function (r) { return r.json(); })
+    .then(function (sales) {
+      sales.forEach(function (sale) {
+        const marker = L.circleMarker([sale.latitude, sale.longitude], {
+          radius: 6,
+          color: "#2d6a4f",
+          fillColor: "#52b788",
+          fillOpacity: 0.85,
+          weight: 1.5,
+        });
+        const priceFormatted = "$" + sale.sale_price.toLocaleString();
+        const dateFormatted = new Date(sale.sale_date + "T00:00:00").toLocaleDateString("en-US", {
+          year: "numeric", month: "short", day: "numeric"
+        });
+        marker.bindPopup(
+          "<strong>" + sale.address + "</strong><br>" +
+          priceFormatted + " &mdash; sold " + dateFormatted + "<br>" +
+          "<span style='color:#8a8070'>" + sale.neighborhood + "</span>"
+        );
+        marker.addTo(salesLayerGroup);
+      });
+    })
+    .catch(function (err) { console.error("Failed to load sales data:", err); });
+
   const overlayLayers = {
+    "Recent property sales": salesLayerGroup,
     "Sanborn maps — 1894": sanbornLayerGroup,
     "Sanborn maps — 1901 (Far Rockaway)": sanborn1901LayerGroup,
     "Sanborn maps — 1912 (full peninsula)": sanborn1912LayerGroup,
