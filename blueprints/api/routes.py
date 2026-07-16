@@ -1,7 +1,92 @@
+import time
 from flask import Blueprint, jsonify, request
 from models import Photo
 
 api_bp = Blueprint("api", __name__)
+_sales_cache = {}
+
+
+@api_bp.route("/sales")
+def sales():
+    """Recent Rockaway-area property sales from NYC's ACRIS system (free,
+    public, no key required — same Socrata platform as PLUTO). Joins the
+    Legals table (address/BBL) against the Master table (doc_type=DEED,
+    sale price, date) for the Rockaway peninsula's block range, then
+    geocodes each by parsing the Beach-street number from the address
+    where present."""
+    import requests
+    import re
+    import sys
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "scripts"))
+    from geocode_utils import interpolate_beach_street, neighborhood_for_beach_number, jitter
+
+    cache_key = "acris_sales"
+    cached = _sales_cache.get(cache_key)
+    if cached and (time.time() - cached["time"]) < 21600:  # 6 hour cache
+        return jsonify(cached["data"])
+
+    try:
+        legals_resp = requests.get(
+            "https://data.cityofnewyork.us/resource/8h5j-fqxa.json",
+            params={
+                "$where": "borough='4' AND block between '15800' and '16400' AND good_through_date > '2022-01-01'",
+                "$select": "document_id,block,lot,street_number,street_name",
+                "$limit": 5000,
+            },
+            timeout=20,
+        )
+        legals = legals_resp.json()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
+
+    doc_ids = [item["document_id"] for item in legals]
+    legals_by_id = {item["document_id"]: item for item in legals}
+
+    sales_out = []
+    batch_size = 200
+    for i in range(0, len(doc_ids), batch_size):
+        batch = doc_ids[i:i + batch_size]
+        quoted = ",".join(f"'{d}'" for d in batch)
+        try:
+            master_resp = requests.get(
+                "https://data.cityofnewyork.us/resource/bnx9-e6tj.json",
+                params={
+                    "$where": f"document_id in({quoted}) AND doc_type='DEED'",
+                    "$select": "document_id,document_date,document_amt",
+                    "$limit": batch_size,
+                },
+                timeout=20,
+            )
+            deeds = master_resp.json()
+        except Exception:
+            continue
+
+        for deed in deeds:
+            amt = float(deed.get("document_amt", 0) or 0)
+            if amt < 10000:
+                continue  # skip $0/$1 non-arms-length transfers
+            legal = legals_by_id.get(deed["document_id"])
+            if not legal:
+                continue
+            street_name = legal.get("street_name", "")
+            bm = re.search(r'BEACH\s+(\d+)', street_name.upper())
+            if not bm:
+                continue
+            beach_num = int(bm.group(1))
+            lat, lng = interpolate_beach_street(beach_num)
+            dlat, dlng = jitter(deed["document_id"], meters=25)
+            sales_out.append({
+                "address": f"{legal.get('street_number', '')} {street_name.title()}".strip(),
+                "sale_date": deed.get("document_date", "")[:10],
+                "sale_price": int(amt),
+                "neighborhood": neighborhood_for_beach_number(beach_num),
+                "latitude": round(lat + dlat, 6),
+                "longitude": round(lng + dlng, 6),
+            })
+
+    _sales_cache[cache_key] = {"time": time.time(), "data": sales_out}
+    return jsonify(sales_out)
 
 
 @api_bp.route("/photos")
