@@ -268,7 +268,14 @@
     })
     .catch(function (err) { console.error("Failed to load sales data:", err); });
 
+  const floodZoneLayer = L.esri.dynamicMapLayer({
+    url: "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer",
+    layers: [28], // Flood Hazard Zones
+    opacity: 0.5,
+  });
+
   const overlayLayers = {
+    "FEMA flood zones": floodZoneLayer,
     "Recent property sales": salesLayerGroup,
     "Sanborn maps — 1894": sanbornLayerGroup,
     "Sanborn maps — 1901 (Far Rockaway)": sanborn1901LayerGroup,
