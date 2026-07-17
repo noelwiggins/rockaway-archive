@@ -176,6 +176,7 @@
     );
     overlay.addTo(usgs1954LayerGroup);
   });
+  baseLayers["Aerial — 1954 USGS (high-res)"] = usgs1954LayerGroup;
 
   const sanborn1912LayerGroup = L.layerGroup();
   const SANBORN_1912_SHEETS = [
@@ -353,7 +354,6 @@
     "Sanborn maps — 1894": sanbornLayerGroup,
     "Sanborn maps — 1901 (Far Rockaway)": sanborn1901LayerGroup,
     "Sanborn maps — 1912 (full peninsula)": sanborn1912LayerGroup,
-    "USGS aerial frames — 1954 (high-res)": usgs1954LayerGroup,
   };
 
   L.control.layers(baseLayers, overlayLayers, { collapsed: true, position: "topright" }).addTo(map);
