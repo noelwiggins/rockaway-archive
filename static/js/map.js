@@ -342,7 +342,10 @@
     opacity: 0.5,
   });
 
+  const photoLayerGroup = L.layerGroup();
+
   const overlayLayers = {
+    "Historic photos": photoLayerGroup,
     "311 noise complaints": noiseLayerGroup,
     "NYC zoning districts": zoningLayer,
     "FEMA flood zones": floodZoneLayer,
@@ -457,9 +460,10 @@
       groups.forEach(function (group) {
         const marker = L.marker([group.lat, group.lng], { icon: makeDotIcon(group.count) });
         marker.on("click", function () { renderThumbList(group); });
-        marker.addTo(map);
+        marker.addTo(photoLayerGroup);
         bounds.push([group.lat, group.lng]);
       });
+      photoLayerGroup.addTo(map);
       if (bounds.length > 0) {
         try { map.fitBounds(bounds, { padding: [40, 40] }); } catch (e) {}
       }
