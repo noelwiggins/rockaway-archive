@@ -126,6 +126,281 @@ def noise():
     return jsonify(out)
 
 
+def _rockaway_block_filter(field="block"):
+    return f"borough='4' AND {field} between '15800' and '16400'"
+
+
+@api_bp.route("/permits")
+def permits():
+    """DOB building permits for the Rockaway peninsula (free NYC Open Data)."""
+    import requests
+    cache_key = "dob_permits"
+    cached = _sales_cache.get(cache_key)
+    if cached and (time.time() - cached["time"]) < 21600:
+        return jsonify(cached["data"])
+    try:
+        resp = requests.get(
+            "https://data.cityofnewyork.us/resource/ipu4-2q9a.json",
+            params={
+                "$where": "borough='QUEENS' AND block between '15800' and '16400' AND gis_latitude IS NOT NULL",
+                "$select": "job__,job_type,work_type,permit_status,filing_date,issuance_date,house__,street_name,gis_latitude,gis_longitude",
+                "$limit": 3000,
+                "$order": "issuance_date DESC",
+            },
+            timeout=20,
+        )
+        data = resp.json()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
+    out = [
+        {
+            "job": d.get("job__"), "type": d.get("job_type"), "work_type": d.get("work_type"),
+            "status": d.get("permit_status"), "date": (d.get("issuance_date") or d.get("filing_date") or "")[:10],
+            "address": f"{d.get('house__','')} {d.get('street_name','')}".strip(),
+            "latitude": float(d["gis_latitude"]), "longitude": float(d["gis_longitude"]),
+        }
+        for d in data if d.get("gis_latitude") and d.get("gis_longitude")
+    ]
+    _sales_cache[cache_key] = {"time": time.time(), "data": out}
+    return jsonify(out)
+
+
+@api_bp.route("/violations")
+def violations():
+    """DOB building code violations for the Rockaway peninsula."""
+    import requests
+    cache_key = "dob_violations"
+    cached = _sales_cache.get(cache_key)
+    if cached and (time.time() - cached["time"]) < 21600:
+        return jsonify(cached["data"])
+    import sys, os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "scripts"))
+    from geocode_utils import interpolate_beach_street, neighborhood_for_beach_number, jitter
+    import re
+    try:
+        resp = requests.get(
+            "https://data.cityofnewyork.us/resource/3h2n-5cm9.json",
+            params={
+                "$where": "boro='4' AND block between '15800' and '16400' AND violation_category like 'V-DOB VIOLATION%25'",
+                "$select": "violation_number,violation_type,house_number,street,issue_date,disposition_comments",
+                "$limit": 3000,
+                "$order": "issue_date DESC",
+            },
+            timeout=20,
+        )
+        data = resp.json()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
+    out = []
+    for d in data:
+        street = d.get("street", "")
+        bm = re.search(r'BEACH\s+(\d+)', street.upper())
+        if not bm:
+            continue
+        beach_num = int(bm.group(1))
+        lat, lng = interpolate_beach_street(beach_num)
+        dlat, dlng = jitter(d.get("violation_number", "") + street, meters=20)
+        out.append({
+            "number": d.get("violation_number"), "type": d.get("violation_type", "")[:60],
+            "date": (d.get("issue_date") or "")[:10],
+            "address": f"{d.get('house_number','')} {street}".strip(),
+            "latitude": round(lat + dlat, 6), "longitude": round(lng + dlng, 6),
+        })
+    _sales_cache[cache_key] = {"time": time.time(), "data": out}
+    return jsonify(out)
+
+
+@api_bp.route("/mortgages")
+def mortgages():
+    """Recent mortgage recordings (ACRIS doc_type=MTGE) for Rockaway — reuses
+    the same Legals/Master join pattern as /api/sales."""
+    import requests, sys, os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "scripts"))
+    from geocode_utils import interpolate_beach_street, neighborhood_for_beach_number, jitter
+    import re
+
+    cache_key = "acris_mortgages"
+    cached = _sales_cache.get(cache_key)
+    if cached and (time.time() - cached["time"]) < 21600:
+        return jsonify(cached["data"])
+
+    try:
+        legals_resp = requests.get(
+            "https://data.cityofnewyork.us/resource/8h5j-fqxa.json",
+            params={
+                "$where": "borough='4' AND block between '15800' and '16400' AND good_through_date > '2023-01-01'",
+                "$select": "document_id,street_number,street_name",
+                "$limit": 5000,
+            },
+            timeout=20,
+        )
+        legals = legals_resp.json()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
+
+    legals_by_id = {item["document_id"]: item for item in legals}
+    doc_ids = list(legals_by_id.keys())
+    out = []
+    batch_size = 200
+    for i in range(0, len(doc_ids), batch_size):
+        batch = doc_ids[i:i + batch_size]
+        quoted = ",".join(f"'{d}'" for d in batch)
+        try:
+            master_resp = requests.get(
+                "https://data.cityofnewyork.us/resource/bnx9-e6tj.json",
+                params={
+                    "$where": f"document_id in({quoted}) AND doc_type='MTGE'",
+                    "$select": "document_id,document_date,document_amt",
+                    "$limit": batch_size,
+                },
+                timeout=20,
+            )
+            recs = master_resp.json()
+        except Exception:
+            continue
+        for rec in recs:
+            amt = float(rec.get("document_amt", 0) or 0)
+            if amt < 10000:
+                continue
+            legal = legals_by_id.get(rec["document_id"])
+            if not legal:
+                continue
+            street_name = legal.get("street_name", "")
+            bm = re.search(r'BEACH\s+(\d+)', street_name.upper())
+            if not bm:
+                continue
+            beach_num = int(bm.group(1))
+            lat, lng = interpolate_beach_street(beach_num)
+            dlat, dlng = jitter(rec["document_id"], meters=25)
+            out.append({
+                "address": f"{legal.get('street_number', '')} {street_name.title()}".strip(),
+                "date": rec.get("document_date", "")[:10],
+                "amount": int(amt),
+                "neighborhood": neighborhood_for_beach_number(beach_num),
+                "latitude": round(lat + dlat, 6), "longitude": round(lng + dlng, 6),
+            })
+    _sales_cache[cache_key] = {"time": time.time(), "data": out}
+    return jsonify(out)
+
+
+@api_bp.route("/pluto")
+def pluto():
+    """PLUTO tax-lot lookup for a clicked location — returns the nearest
+    lot's characteristics (building class, year built, zoning, lot area,
+    assessed value, etc.). Caches the whole Rockaway PLUTO extract once
+    (a few thousand lots) and finds the nearest lot in Python, since PLUTO's
+    own lat/lon field is the lot's centroid, not something worth a spatial
+    DB query for this scale of data."""
+    import requests
+    lat = request.args.get("lat", type=float)
+    lng = request.args.get("lng", type=float)
+    if lat is None or lng is None:
+        return jsonify({"error": "lat and lng required"}), 400
+
+    cache_key = "pluto_rockaway"
+    cached = _sales_cache.get(cache_key)
+    if cached and (time.time() - cached["time"]) < 86400:
+        lots = cached["data"]
+    else:
+        try:
+            resp = requests.get(
+                "https://data.cityofnewyork.us/resource/64uk-42ks.json",
+                params={
+                    "$where": "borough='QN' AND block between '15800' and '16400' AND latitude IS NOT NULL",
+                    "$select": "address,bldgclass,landuse,yearbuilt,numfloors,unitsres,unitstotal,"
+                               "lotarea,bldgarea,assessland,assesstot,zonedist1,ownername,latitude,longitude",
+                    "$limit": 10000,
+                },
+                timeout=25,
+            )
+            lots = resp.json()
+        except Exception as e:
+            return jsonify({"error": str(e)}), 502
+        _sales_cache[cache_key] = {"time": time.time(), "data": lots}
+
+    best, best_dist = None, None
+    for lot in lots:
+        try:
+            llat, llng = float(lot["latitude"]), float(lot["longitude"])
+        except (KeyError, ValueError, TypeError):
+            continue
+        dist = (llat - lat) ** 2 + (llng - lng) ** 2
+        if best_dist is None or dist < best_dist:
+            best, best_dist = lot, dist
+
+    if best is None or best_dist > 0.0002 ** 2:  # ~roughly 20m squared-degrees threshold
+        return jsonify({"error": "no lot found near that location"}), 404
+
+    return jsonify({
+        "address": best.get("address"),
+        "building_class": best.get("bldgclass"),
+        "land_use": best.get("landuse"),
+        "year_built": best.get("yearbuilt"),
+        "floors": best.get("numfloors"),
+        "residential_units": best.get("unitsres"),
+        "total_units": best.get("unitstotal"),
+        "lot_area_sqft": best.get("lotarea"),
+        "building_area_sqft": best.get("bldgarea"),
+        "assessed_land": best.get("assessland"),
+        "assessed_total": best.get("assesstot"),
+        "zoning": best.get("zonedist1"),
+        "owner": best.get("ownername"),
+    })
+
+
+@api_bp.route("/rolling-sales")
+def rolling_sales():
+    """NYC DOF's Citywide Rolling Calendar Sales — a curated property sales
+    file (building class, sq ft, units, year built) distinct from the raw
+    ACRIS deed records used in /api/sales."""
+    import requests
+    cache_key = "rolling_sales"
+    cached = _sales_cache.get(cache_key)
+    if cached and (time.time() - cached["time"]) < 21600:
+        return jsonify(cached["data"])
+    try:
+        resp = requests.get(
+            "https://data.cityofnewyork.us/resource/usep-8jbt.json",
+            params={
+                "$where": "borough='4' AND block between '15800' and '16400' AND sale_price > '10000'",
+                "$select": "neighborhood,building_class_category,address,zip_code,residential_units,"
+                           "total_units,land_square_feet,gross_square_feet,year_built,sale_price,sale_date",
+                "$limit": 2000,
+                "$order": "sale_date DESC",
+            },
+            timeout=20,
+        )
+        data = resp.json()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
+
+    import sys, os, re
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "scripts"))
+    from geocode_utils import interpolate_beach_street, jitter
+
+    out = []
+    for d in data:
+        addr = d.get("address", "")
+        bm = re.search(r'BEACH\s+(\d+)', addr.upper())
+        if not bm:
+            continue
+        beach_num = int(bm.group(1))
+        lat, lng = interpolate_beach_street(beach_num)
+        dlat, dlng = jitter(addr + d.get("sale_date", ""), meters=25)
+        out.append({
+            "address": addr.title(),
+            "neighborhood": d.get("neighborhood", "").title(),
+            "building_class": d.get("building_class_category", "").strip(),
+            "units": d.get("total_units"),
+            "year_built": d.get("year_built"),
+            "sale_price": int(float(d.get("sale_price", 0) or 0)),
+            "sale_date": (d.get("sale_date") or "")[:10],
+            "latitude": round(lat + dlat, 6), "longitude": round(lng + dlng, 6),
+        })
+    _sales_cache[cache_key] = {"time": time.time(), "data": out}
+    return jsonify(out)
+
+
 @api_bp.route("/sales")
 def sales():
     """Recent Rockaway-area property sales from NYC's ACRIS system (free,
