@@ -3,6 +3,40 @@
 
   const map = L.map("map-canvas", { zoomControl: true }).setView(ROCKAWAY_CENTER, 13);
 
+  const aqiClassFor = function (category) {
+    return "aqi-" + category.toLowerCase().replace(/ for /g, "-").replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "");
+  };
+
+  fetch("/api/conditions")
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      const body = document.getElementById("conditions-body");
+      if (!body) return;
+      let html = "";
+
+      if (data.weather) {
+        html += '<div class="conditions-row"><span class="conditions-label">Weather</span>' +
+          '<span class="conditions-value">' + data.weather.temperature + '&deg;' + data.weather.unit +
+          ' — ' + data.weather.short_forecast + '</span></div>';
+      }
+      if (data.wave_height && data.wave_height.feet !== null) {
+        html += '<div class="conditions-row"><span class="conditions-label">Wave height</span>' +
+          '<span class="conditions-value">' + data.wave_height.feet + ' ft</span></div>';
+      }
+      if (data.air_quality && data.air_quality.length) {
+        data.air_quality.forEach(function (aq) {
+          html += '<div class="conditions-row"><span class="conditions-label">' + aq.parameter + ' AQI</span>' +
+            '<span class="conditions-value ' + aqiClassFor(aq.category) + '">' + aq.aqi + ' — ' + aq.category + '</span></div>';
+        });
+      }
+      if (!html) html = '<div class="conditions-row">Unavailable right now</div>';
+      body.innerHTML = html;
+    })
+    .catch(function () {
+      const body = document.getElementById("conditions-body");
+      if (body) body.innerHTML = '<div class="conditions-row">Unavailable right now</div>';
+    });
+
   const darkLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     subdomains: "abcd",
