@@ -63,10 +63,13 @@ def conditions():
     # Wave height (NDBC buoy 44065)
     try:
         buoy_resp = requests.get("https://www.ndbc.noaa.gov/data/latest_obs/latest_obs.txt", timeout=15)
-        for line in buoy_resp.text.splitlines():
+        lines = buoy_resp.text.splitlines()
+        header = lines[0].lstrip("#").split()
+        wvht_idx = header.index("WVHT")
+        for line in lines[2:]:
             if line.startswith("44065"):
                 fields = line.split()
-                wvht = fields[8] if len(fields) > 8 else "MM"
+                wvht = fields[wvht_idx] if len(fields) > wvht_idx else "MM"
                 out["wave_height"] = {
                     "feet": None if wvht == "MM" else round(float(wvht) * 3.28084, 1),
                     "station": "NY Harbor Entrance buoy (44065)",
