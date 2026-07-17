@@ -6,6 +6,79 @@ api_bp = Blueprint("api", __name__)
 _sales_cache = {}
 
 
+@api_bp.route("/conditions")
+def conditions():
+    """Combined current-conditions snapshot for the Rockaway area — air
+    quality (EPA AirNow), weather (NOAA/NWS), and wave height (NOAA NDBC
+    buoy 44065, NY Harbor Entrance, the nearest offshore buoy). All three
+    are single regional readings rather than something that varies across
+    the peninsula, so they're bundled as one snapshot rather than three
+    separate map layers."""
+    import requests
+
+    cache_key = "current_conditions"
+    cached = _sales_cache.get(cache_key)
+    if cached and (time.time() - cached["time"]) < 1800:  # 30 min cache
+        return jsonify(cached["data"])
+
+    out = {"air_quality": None, "weather": None, "wave_height": None}
+
+    # Air quality
+    try:
+        aq_resp = requests.get(
+            "https://www.airnowapi.org/aq/observation/latLong/current/",
+            params={
+                "format": "application/json",
+                "latitude": 40.5845,
+                "longitude": -73.8168,
+                "distance": 25,
+                "API_KEY": "8CA5CA4F-75DD-4056-8AEF-30028688E74D",
+            },
+            timeout=15,
+        )
+        aq_data = aq_resp.json()
+        out["air_quality"] = [
+            {"parameter": p["ParameterName"], "aqi": p["AQI"], "category": p["Category"]["Name"]}
+            for p in aq_data
+        ]
+    except Exception:
+        pass
+
+    # Weather
+    try:
+        headers = {"User-Agent": "RockawayArchive research@harmonyball.com"}
+        forecast_resp = requests.get(
+            "https://api.weather.gov/gridpoints/OKX/41,37/forecast", headers=headers, timeout=15
+        )
+        period = forecast_resp.json()["properties"]["periods"][0]
+        out["weather"] = {
+            "temperature": period["temperature"],
+            "unit": period["temperatureUnit"],
+            "short_forecast": period["shortForecast"],
+            "wind": period["windSpeed"] + " " + period["windDirection"],
+        }
+    except Exception:
+        pass
+
+    # Wave height (NDBC buoy 44065)
+    try:
+        buoy_resp = requests.get("https://www.ndbc.noaa.gov/data/latest_obs/latest_obs.txt", timeout=15)
+        for line in buoy_resp.text.splitlines():
+            if line.startswith("44065"):
+                fields = line.split()
+                wvht = fields[8] if len(fields) > 8 else "MM"
+                out["wave_height"] = {
+                    "feet": None if wvht == "MM" else round(float(wvht) * 3.28084, 1),
+                    "station": "NY Harbor Entrance buoy (44065)",
+                }
+                break
+    except Exception:
+        pass
+
+    _sales_cache[cache_key] = {"time": time.time(), "data": out}
+    return jsonify(out)
+
+
 @api_bp.route("/noise")
 def noise():
     """Recent noise complaints from NYC's 311 system for the Rockaway zip
