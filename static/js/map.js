@@ -67,10 +67,12 @@
   const baseLayers = {
     "Dark": darkLayer,
     "Satellite (current)": satelliteLayer,
-    "Aerial — 1924": aerial1924Layer,
   };
+
+  const aerialGroupLayers = {};
+  aerialGroupLayers["Aerial — 1924"] = aerial1924Layer;
   aerialYears.forEach(function (year) {
-    baseLayers["Aerial — " + year] = aerialLayersByYear[year];
+    aerialGroupLayers["Aerial — " + year] = aerialLayersByYear[year];
   });
 
   // Sanborn Fire Insurance Map overlays — raw public-domain sheet scans from the
@@ -180,7 +182,7 @@
     );
     overlay.addTo(usgs1954LayerGroup);
   });
-  baseLayers["Aerial — 1954 USGS (high-res)"] = usgs1954LayerGroup;
+  aerialGroupLayers["Aerial — 1954 USGS (high-res)"] = usgs1954LayerGroup;
 
   const sanborn1912LayerGroup = L.layerGroup();
   const SANBORN_1912_SHEETS = [
@@ -347,6 +349,73 @@
     opacity: 0.5,
   });
 
+  function makeMarkerLayer(endpoint, colorMain, colorFill, popupFn) {
+    const group = L.layerGroup();
+    fetch(endpoint)
+      .then(function (r) { return r.json(); })
+      .then(function (records) {
+        if (!Array.isArray(records)) return;
+        records.forEach(function (rec) {
+          if (rec.latitude == null || rec.longitude == null) return;
+          const marker = L.circleMarker([rec.latitude, rec.longitude], {
+            radius: 5, color: colorMain, fillColor: colorFill, fillOpacity: 0.75, weight: 1.5,
+          });
+          marker.bindPopup(popupFn(rec));
+          marker.addTo(group);
+        });
+      })
+      .catch(function (err) { console.error("Failed to load " + endpoint, err); });
+    return group;
+  }
+
+  const rollingSalesLayer = makeMarkerLayer("/api/rolling-sales", "#1b4965", "#5fa8d3", function (r) {
+    return "<strong>" + r.address + "</strong><br>$" + r.sale_price.toLocaleString() +
+      " — " + r.sale_date + "<br><span style='color:#8a8070'>" + r.building_class +
+      (r.year_built ? ", built " + r.year_built : "") + "</span>";
+  });
+
+  const mortgagesLayer = makeMarkerLayer("/api/mortgages", "#6a4c93", "#b298dc", function (r) {
+    return "<strong>" + r.address + "</strong><br>$" + r.amount.toLocaleString() +
+      " mortgage — " + r.date;
+  });
+
+  const permitsLayer = makeMarkerLayer("/api/permits", "#bb4430", "#f2a679", function (r) {
+    return "<strong>" + (r.address || "Permit " + r.job) + "</strong><br>" +
+      r.type + " — " + r.work_type + "<br><span style='color:#8a8070'>" + r.status + ", " + r.date + "</span>";
+  });
+
+  const violationsLayer = makeMarkerLayer("/api/violations", "#a4222f", "#e07a5f", function (r) {
+    return "<strong>" + r.address + "</strong><br>" + r.type + "<br><span style='color:#8a8070'>" + r.date + "</span>";
+  });
+
+  // PLUTO is a click-to-query lookup (every tax lot citywide is too much to
+  // load as markers) — toggling this layer attaches a click handler instead
+  // of drawing anything itself.
+  let plutoClickHandler = null;
+  const plutoLayer = L.layerGroup();
+  plutoLayer.on("add", function () {
+    plutoClickHandler = function (e) {
+      fetch("/api/pluto?lat=" + e.latlng.lat + "&lng=" + e.latlng.lng)
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.error) return;
+          const popupHtml =
+            "<strong>" + (d.address || "Tax lot") + "</strong><br>" +
+            "Building class: " + (d.building_class || "—") + "<br>" +
+            "Year built: " + (d.year_built || "—") + " · Floors: " + (d.floors || "—") + "<br>" +
+            "Units: " + (d.total_units || "—") + " · Lot area: " + (d.lot_area_sqft || "—") + " sqft<br>" +
+            "Zoning: " + (d.zoning || "—") + "<br>" +
+            "Assessed total: $" + (d.assessed_total ? Number(d.assessed_total).toLocaleString() : "—") + "<br>" +
+            "<span style='color:#8a8070'>" + (d.owner || "") + "</span>";
+          L.popup().setLatLng(e.latlng).setContent(popupHtml).openOn(map);
+        });
+    };
+    map.on("click", plutoClickHandler);
+  });
+  plutoLayer.on("remove", function () {
+    if (plutoClickHandler) map.off("click", plutoClickHandler);
+  });
+
   const photoLayerGroup = L.layerGroup();
 
   const streetLabelsLayer = L.layerGroup([
@@ -360,19 +429,36 @@
     ),
   ]);
 
-  const overlayLayers = {
-    "Street map (labels & roads)": streetLabelsLayer,
-    "Historic photos": photoLayerGroup,
-    "311 noise complaints": noiseLayerGroup,
-    "NYC zoning districts": zoningLayer,
-    "FEMA flood zones": floodZoneLayer,
-    "Recent property sales": salesLayerGroup,
-    "Sanborn maps — 1894": sanbornLayerGroup,
-    "Sanborn maps — 1901 (Far Rockaway)": sanborn1901LayerGroup,
-    "Sanborn maps — 1912 (full peninsula)": sanborn1912LayerGroup,
+  const groupedOverlays = {
+    "Aerials": aerialGroupLayers,
+    "General": {
+      "Historic photos": photoLayerGroup,
+      "Street map (labels & roads)": streetLabelsLayer,
+      "311 noise complaints": noiseLayerGroup,
+      "NYC zoning districts": zoningLayer,
+    },
+    "Sanborn maps": {
+      "1894": sanbornLayerGroup,
+      "1901 (Far Rockaway)": sanborn1901LayerGroup,
+      "1912 (full peninsula)": sanborn1912LayerGroup,
+    },
+    "Real Estate": {
+      "Recent property sales": salesLayerGroup,
+      "NYC Rolling Sales": rollingSalesLayer,
+      "Deeds & mortgages recorded": mortgagesLayer,
+      "Building permits": permitsLayer,
+      "Building violations": violationsLayer,
+      "FEMA flood zones": floodZoneLayer,
+      "Tax-lot lookup (PLUTO) — click map": plutoLayer,
+    },
   };
 
-  L.control.layers(baseLayers, overlayLayers, { collapsed: true, position: "topright" }).addTo(map);
+  L.control.groupedLayers(baseLayers, groupedOverlays, {
+    collapsed: true,
+    position: "topright",
+    exclusiveGroups: ["Aerials"],
+    groupCheckboxes: true,
+  }).addTo(map);
 
   const sidebar = document.getElementById("photo-sidebar");
   const toggleTab = document.getElementById("sidebar-toggle");
