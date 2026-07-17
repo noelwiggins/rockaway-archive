@@ -78,6 +78,35 @@ a { color: inherit; text-decoration: none; }
 .main-nav a.nav-add { color: var(--teal-dark); font-weight: 600; }
 .main-nav a.nav-muted { color: #8a8070; }
 
+.conditions-panel {
+  margin-top: 12px;
+  max-width: 280px;
+}
+.conditions-panel h3 {
+  font-size: 0.85rem;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+.conditions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--sand-dark);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+.conditions-row:last-child { border-bottom: none; }
+.conditions-label { color: #8a8070; }
+.conditions-value { font-weight: 600; text-align: right; }
+.aqi-good { color: #2d6a4f; }
+.aqi-moderate { color: #b8860b; }
+.aqi-unhealthy-sensitive { color: #c1440e; }
+.aqi-unhealthy { color: #a4222f; }
+.aqi-very-unhealthy, .aqi-hazardous { color: #6a1b1b; }
+
 .header-search {
   display: flex;
   align-items: center;
