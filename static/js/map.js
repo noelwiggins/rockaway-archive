@@ -161,9 +161,13 @@
       // Real 3-corner placement (topLeft, topRight, bottomLeft), not an
       // axis-aligned box — the flight strip is rotated ~2° off true north,
       // so a simple rectangular bounds would distort and misplace it.
-      topLeft: [40.603694, -73.854215],
-      topRight: [40.602229, -73.801746],
-      bottomLeft: [40.563702, -73.85612],
+      // Rotated 90° left (counterclockwise) from the original NW/NE/SW
+      // assignment per feedback that the frame appeared rotated wrong —
+      // cycling: old topRight becomes new topLeft, old bottomRight (SE)
+      // becomes new topRight, old topLeft becomes new bottomLeft.
+      topLeft: [40.602229, -73.801746],
+      topRight: [40.562238, -73.803682],
+      bottomLeft: [40.603694, -73.854215],
     },
   ];
   USGS_1954_FRAMES.forEach(function (frame) {
@@ -345,7 +349,19 @@
 
   const photoLayerGroup = L.layerGroup();
 
+  const streetLabelsLayer = L.layerGroup([
+    L.tileLayer(
+      "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}",
+      { maxZoom: 19, minZoom: 10, attribution: "Esri" }
+    ),
+    L.tileLayer(
+      "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+      { maxZoom: 19, minZoom: 10, attribution: "Esri" }
+    ),
+  ]);
+
   const overlayLayers = {
+    "Street map (labels & roads)": streetLabelsLayer,
     "Historic photos": photoLayerGroup,
     "311 noise complaints": noiseLayerGroup,
     "NYC zoning districts": zoningLayer,
