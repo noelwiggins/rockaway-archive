@@ -161,13 +161,13 @@
       // Real 3-corner placement (topLeft, topRight, bottomLeft), not an
       // axis-aligned box — the flight strip is rotated ~2° off true north,
       // so a simple rectangular bounds would distort and misplace it.
-      // Rotated 90° left (counterclockwise) from the original NW/NE/SW
-      // assignment per feedback that the frame appeared rotated wrong —
-      // cycling: old topRight becomes new topLeft, old bottomRight (SE)
-      // becomes new topRight, old topLeft becomes new bottomLeft.
-      topLeft: [40.602229, -73.801746],
-      topRight: [40.562238, -73.803682],
-      bottomLeft: [40.603694, -73.854215],
+      // Corrected using both pieces of feedback together: the "rotate left"
+      // version looked upside-down, which mathematically means the correct
+      // placement is the original NW/NE/SW guess rotated 90° clockwise
+      // (not counterclockwise) — derived and cross-checked two ways.
+      topLeft: [40.563702, -73.85612],
+      topRight: [40.603694, -73.854215],
+      bottomLeft: [40.562238, -73.803682],
     },
   ];
   USGS_1954_FRAMES.forEach(function (frame) {
