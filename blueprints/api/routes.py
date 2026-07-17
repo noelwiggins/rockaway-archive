@@ -181,7 +181,7 @@ def violations():
         resp = requests.get(
             "https://data.cityofnewyork.us/resource/3h2n-5cm9.json",
             params={
-                "$where": "boro='4' AND block between '15800' and '16400' AND violation_category like 'V-DOB VIOLATION%25'",
+                "$where": "boro='4' AND block between '15800' and '16400' AND violation_category like 'V-DOB VIOLATION%'",
                 "$select": "violation_number,violation_type,house_number,street,issue_date,disposition_comments",
                 "$limit": 3000,
                 "$order": "issue_date DESC",
