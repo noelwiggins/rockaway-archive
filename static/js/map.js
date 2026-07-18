@@ -417,6 +417,7 @@
   });
 
   const photoLayerGroup = L.layerGroup();
+  photoLayerGroup.addTo(map);
 
   const streetLabelsLayer = L.layerGroup([
     L.tileLayer(
@@ -428,10 +429,11 @@
       { maxZoom: 19, minZoom: 10, attribution: "Esri" }
     ),
   ]);
+  streetLabelsLayer.addTo(map);
 
   const groupedOverlays = {
     "Aerials": aerialGroupLayers,
-    "General": {
+    "Street map": {
       "Historic photos": photoLayerGroup,
       "Street map (labels & roads)": streetLabelsLayer,
       "311 noise complaints": noiseLayerGroup,
@@ -469,6 +471,48 @@
     const groupEl = nameSpan.closest(".leaflet-control-layers-group");
     if (groupEl) groupEl.classList.toggle("group-expanded");
   });
+
+  // The plugin intentionally skips a group checkbox for exclusive (radio)
+  // groups, but the request is for visual/functional consistency across
+  // all parent groups — so add one manually for Aerials. Checking it shows
+  // whichever aerial year was last selected (or the first one, if none
+  // yet); unchecking hides whatever aerial is currently shown.
+  (function setupAerialsCheckbox() {
+    const groupEls = layerControl.getContainer().querySelectorAll(".leaflet-control-layers-group");
+    let aerialsGroupEl = null;
+    groupEls.forEach(function (el) {
+      const nameEl = el.querySelector(".leaflet-control-layers-group-name");
+      if (nameEl && nameEl.textContent.trim().indexOf("Aerials") === 0) aerialsGroupEl = el;
+    });
+    if (!aerialsGroupEl) return;
+
+    const labelEl = aerialsGroupEl.querySelector(".leaflet-control-layers-group-label");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "leaflet-control-layers-group-selector";
+    labelEl.insertBefore(checkbox, labelEl.firstChild);
+
+    let lastAerial = null;
+
+    map.on("layeradd layerremove", function () {
+      for (const name in aerialGroupLayers) {
+        if (map.hasLayer(aerialGroupLayers[name])) { lastAerial = aerialGroupLayers[name]; break; }
+      }
+      checkbox.checked = !!lastAerial;
+    });
+
+    checkbox.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (checkbox.checked) {
+        const toShow = lastAerial || aerialGroupLayers[Object.keys(aerialGroupLayers)[0]];
+        toShow.addTo(map);
+      } else {
+        for (const name in aerialGroupLayers) {
+          if (map.hasLayer(aerialGroupLayers[name])) map.removeLayer(aerialGroupLayers[name]);
+        }
+      }
+    });
+  })();
 
   const sidebar = document.getElementById("photo-sidebar");
   const toggleTab = document.getElementById("sidebar-toggle");
@@ -575,7 +619,6 @@
         marker.addTo(photoLayerGroup);
         bounds.push([group.lat, group.lng]);
       });
-      photoLayerGroup.addTo(map);
       if (bounds.length > 0) {
         try { map.fitBounds(bounds, { padding: [40, 40] }); } catch (e) {}
       }
