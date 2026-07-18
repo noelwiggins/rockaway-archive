@@ -453,12 +453,22 @@
     },
   };
 
-  L.control.groupedLayers(baseLayers, groupedOverlays, {
+  const layerControl = L.control.groupedLayers(baseLayers, groupedOverlays, {
     collapsed: true,
     position: "topright",
     exclusiveGroups: ["Aerials"],
     groupCheckboxes: true,
   }).addTo(map);
+
+  // Groups start collapsed (CSS hides children by default); clicking a
+  // group's name expands/collapses just that group. Clicking the group's
+  // own "select all" checkbox does not toggle expansion.
+  layerControl.getContainer().addEventListener("click", function (e) {
+    const nameSpan = e.target.closest(".leaflet-control-layers-group-name");
+    if (!nameSpan) return;
+    const groupEl = nameSpan.closest(".leaflet-control-layers-group");
+    if (groupEl) groupEl.classList.toggle("group-expanded");
+  });
 
   const sidebar = document.getElementById("photo-sidebar");
   const toggleTab = document.getElementById("sidebar-toggle");
