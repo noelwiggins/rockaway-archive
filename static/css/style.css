@@ -401,6 +401,27 @@ a { color: inherit; text-decoration: none; }
 .leaflet-control-layers label { margin-bottom: 4px; }
 .leaflet-control-layers-separator { border-top: 1px dashed var(--sand-dark) !important; margin: 6px 0 !important; }
 
+/* Collapsible parent/child groups: children are plain sibling <label>
+   elements after the group header in this plugin's DOM, so hide anything
+   that isn't the header unless the group has been expanded. */
+.leaflet-control-layers-group > label:not(.leaflet-control-layers-group-label) {
+  display: none;
+}
+.leaflet-control-layers-group.group-expanded > label:not(.leaflet-control-layers-group-label) {
+  display: block;
+}
+.leaflet-control-layers-group-label {
+  cursor: pointer;
+  font-weight: 600;
+}
+.leaflet-control-layers-group-name::before {
+  content: "\25B8  "; /* right-pointing triangle, collapsed */
+  font-size: 0.7em;
+}
+.leaflet-control-layers-group.group-expanded > .leaflet-control-layers-group-label .leaflet-control-layers-group-name::before {
+  content: "\25BE  "; /* down-pointing triangle, expanded */
+}
+
 .leaflet-popup-content-wrapper {
   background: var(--paper-white);
   border-radius: var(--radius);
