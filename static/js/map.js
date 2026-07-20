@@ -538,6 +538,51 @@
   // inside an expanded control zooms the map instead of scrolling the list.
   L.DomEvent.disableScrollPropagation(layerControl.getContainer());
 
+  // Individual panel collapse ("roll up") — each panel's own button toggles
+  // just that panel, and remembers the choice so a page reload keeps it.
+  document.querySelectorAll(".panel-collapse-btn").forEach(function (btn) {
+    const targetId = btn.getAttribute("data-target");
+    const panel = document.getElementById(targetId);
+    if (!panel) return;
+    if (localStorage.getItem("panel-collapsed-" + targetId) === "1") {
+      panel.classList.add("panel-collapsed");
+    }
+    btn.addEventListener("click", function () {
+      panel.classList.toggle("panel-collapsed");
+      localStorage.setItem(
+        "panel-collapsed-" + targetId,
+        panel.classList.contains("panel-collapsed") ? "1" : "0"
+      );
+    });
+  });
+
+  // Master "hide all overlays" toggle — hides the whole panel stack (and
+  // the Leaflet layer control) at once for an unobstructed view of the map,
+  // with a small button to bring everything back.
+  const panelStack = document.querySelector(".map-panel-stack");
+  const showPanelsBtn = document.getElementById("show-panels-btn");
+  const hideAllBtn = document.createElement("button");
+  hideAllBtn.className = "panel-collapse-btn hide-all-btn";
+  hideAllBtn.setAttribute("aria-label", "Hide all overlays");
+  hideAllBtn.innerHTML = "&#10005;";
+  hideAllBtn.title = "Hide all overlay panels";
+  if (panelStack) panelStack.appendChild(hideAllBtn);
+
+  function hideAllOverlays() {
+    if (panelStack) panelStack.classList.add("all-hidden");
+    const layersControlEl = document.querySelector(".leaflet-control-layers");
+    if (layersControlEl) layersControlEl.style.display = "none";
+    if (showPanelsBtn) showPanelsBtn.style.display = "block";
+  }
+  function showAllOverlays() {
+    if (panelStack) panelStack.classList.remove("all-hidden");
+    const layersControlEl = document.querySelector(".leaflet-control-layers");
+    if (layersControlEl) layersControlEl.style.display = "";
+    if (showPanelsBtn) showPanelsBtn.style.display = "none";
+  }
+  hideAllBtn.addEventListener("click", hideAllOverlays);
+  if (showPanelsBtn) showPanelsBtn.addEventListener("click", showAllOverlays);
+
   const sidebar = document.getElementById("photo-sidebar");
   const toggleTab = document.getElementById("sidebar-toggle");
   let currentGroup = null;
