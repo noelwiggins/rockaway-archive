@@ -413,6 +413,8 @@ a { color: inherit; text-decoration: none; }
    that isn't the header unless the group has been expanded. */
 .leaflet-control-layers-group > label:not(.leaflet-control-layers-group-label) {
   display: none;
+  padding-left: 20px;
+  margin-top: 2px;
 }
 .leaflet-control-layers-group.group-expanded > label:not(.leaflet-control-layers-group-label) {
   display: block;
