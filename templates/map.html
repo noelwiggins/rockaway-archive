@@ -10,28 +10,40 @@
   <div id="map-canvas"></div>
 
   <div class="map-panel-stack">
-    <div class="map-panel">
-      <h2>Find a spot</h2>
-      <div class="chip-row">
-        <a href="{{ url_for('main.map_view') }}" class="chip {{ 'active' if not selected_neighborhood }}">All</a>
-        {% for hood in neighborhoods %}
-          {% if hood != 'Other' %}
-          <a href="{{ url_for('main.map_view', neighborhood=hood) }}" class="chip {{ 'active' if selected_neighborhood == hood }}">{{ hood }}</a>
-          {% endif %}
-        {% endfor %}
+    <div class="map-panel" id="find-spot-panel">
+      <div class="map-panel-header">
+        <h2>Find a spot</h2>
+        <button class="panel-collapse-btn" data-target="find-spot-panel" aria-label="Collapse">&#9650;</button>
       </div>
-      <div class="map-stats">
-        {{ total_geocoded }} pinned on the map &middot;
-        {{ total_ungeocoded }} without a known location —
-        <a href="{{ url_for('main.gallery', show='ungeocoded') }}">see those</a>
+      <div class="map-panel-body">
+        <div class="chip-row">
+          <a href="{{ url_for('main.map_view') }}" class="chip {{ 'active' if not selected_neighborhood }}">All</a>
+          {% for hood in neighborhoods %}
+            {% if hood != 'Other' %}
+            <a href="{{ url_for('main.map_view', neighborhood=hood) }}" class="chip {{ 'active' if selected_neighborhood == hood }}">{{ hood }}</a>
+            {% endif %}
+          {% endfor %}
+        </div>
+        <div class="map-stats">
+          {{ total_geocoded }} pinned on the map &middot;
+          {{ total_ungeocoded }} without a known location —
+          <a href="{{ url_for('main.gallery', show='ungeocoded') }}">see those</a>
+        </div>
       </div>
     </div>
 
     <div class="map-panel conditions-panel" id="conditions-panel">
-      <h3>Current conditions</h3>
-      <div id="conditions-body">Loading&hellip;</div>
+      <div class="map-panel-header">
+        <h3>Current conditions</h3>
+        <button class="panel-collapse-btn" data-target="conditions-panel" aria-label="Collapse">&#9650;</button>
+      </div>
+      <div class="map-panel-body">
+        <div id="conditions-body">Loading&hellip;</div>
+      </div>
     </div>
   </div>
+
+  <button class="show-panels-btn" id="show-panels-btn" style="display:none;">&#9662; Show panels</button>
 
   <button class="sidebar-toggle-tab" id="sidebar-toggle" style="display:none;">Photos &rsaquo;</button>
 
