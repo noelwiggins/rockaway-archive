@@ -531,6 +531,27 @@
         clearAllAerialRadios();
       }
     });
+
+    // Native radio buttons can't be turned off by clicking the one that's
+    // already selected — clicking an already-checked radio is a no-op as
+    // far as the browser is concerned. This tracks which radio (if any)
+    // was checked right before each click, and if the user clicked that
+    // same one again, treats it as "turn this aerial off" instead.
+    let radioCheckedBeforeClick = null;
+    aerialsGroupEl.querySelectorAll('input[type="radio"]').forEach(function (radio) {
+      radio.addEventListener("pointerdown", function () {
+        radioCheckedBeforeClick = radio.checked ? radio : null;
+      });
+      radio.addEventListener("click", function () {
+        if (radioCheckedBeforeClick === radio) {
+          radio.checked = false;
+          for (const name in aerialGroupLayers) {
+            if (map.hasLayer(aerialGroupLayers[name])) map.removeLayer(aerialGroupLayers[name]);
+          }
+        }
+        radioCheckedBeforeClick = null;
+      });
+    });
   })();
 
   // Prevent the map underneath from capturing wheel/scroll input meant for
