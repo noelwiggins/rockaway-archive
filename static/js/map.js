@@ -535,22 +535,31 @@
     // Native radio buttons can't be turned off by clicking the one that's
     // already selected — clicking an already-checked radio is a no-op as
     // far as the browser is concerned. This tracks which radio (if any)
-    // was checked right before each click, and if the user clicked that
-    // same one again, treats it as "turn this aerial off" instead.
+    // was checked right before each interaction, and if the user tapped
+    // that same one again, treats it as "turn this aerial off" instead.
+    // Delegated on the group container (rather than attached to each radio
+    // individually) so it reliably fires regardless of whether the tap
+    // landed exactly on the small radio circle or on the label text next
+    // to it — both are valid tap targets for a labeled radio button.
     let radioCheckedBeforeClick = null;
-    aerialsGroupEl.querySelectorAll('input[type="radio"]').forEach(function (radio) {
-      radio.addEventListener("pointerdown", function () {
-        radioCheckedBeforeClick = radio.checked ? radio : null;
-      });
-      radio.addEventListener("click", function () {
-        if (radioCheckedBeforeClick === radio) {
-          radio.checked = false;
-          for (const name in aerialGroupLayers) {
-            if (map.hasLayer(aerialGroupLayers[name])) map.removeLayer(aerialGroupLayers[name]);
-          }
+
+    aerialsGroupEl.addEventListener("pointerdown", function (e) {
+      const radio = e.target.closest('input[type="radio"]') ||
+        (e.target.closest("label") && e.target.closest("label").querySelector('input[type="radio"]'));
+      radioCheckedBeforeClick = radio && radio.checked ? radio : null;
+    });
+
+    aerialsGroupEl.addEventListener("click", function (e) {
+      const radio = e.target.closest('input[type="radio"]') ||
+        (e.target.closest("label") && e.target.closest("label").querySelector('input[type="radio"]'));
+      if (!radio) return;
+      if (radioCheckedBeforeClick === radio) {
+        radio.checked = false;
+        for (const name in aerialGroupLayers) {
+          if (map.hasLayer(aerialGroupLayers[name])) map.removeLayer(aerialGroupLayers[name]);
         }
-        radioCheckedBeforeClick = null;
-      });
+      }
+      radioCheckedBeforeClick = null;
     });
   })();
 
