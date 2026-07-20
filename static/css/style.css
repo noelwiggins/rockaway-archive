@@ -249,6 +249,22 @@ a { color: inherit; text-decoration: none; }
   gap: 12px;
   max-width: 230px;
 }
+@media (max-width: 600px) {
+  .map-panel-stack {
+    max-width: 58vw;
+  }
+  .map-panel {
+    padding: 10px 12px;
+    font-size: 0.85em;
+  }
+  .map-panel h2 { font-size: 0.9rem; }
+  .conditions-panel h3 { font-size: 0.75rem; }
+  .chip { font-size: 0.62rem; padding: 3px 7px; }
+  .leaflet-control-layers-expanded {
+    max-width: 38vw;
+    font-size: 0.68rem !important;
+  }
+}
 .map-panel {
   background: rgba(250, 246, 236, 0.96);
   border: 2px solid var(--ink);
