@@ -537,6 +537,17 @@
   // the layer control's own scrollable list — without this, scrolling
   // inside an expanded control zooms the map instead of scrolling the list.
   L.DomEvent.disableScrollPropagation(layerControl.getContainer());
+  L.DomEvent.disableClickPropagation(layerControl.getContainer());
+  // The above only stops mouse-wheel and click propagation. On touch
+  // devices, scrolling the expanded (overflow:auto) list is a touch-drag
+  // gesture, and without this, Leaflet's map drag handler still receives
+  // those touch events and pans the map underneath instead of letting the
+  // list itself scroll.
+  ["touchstart", "touchmove", "touchend"].forEach(function (evt) {
+    L.DomEvent.on(layerControl.getContainer(), evt, function (e) {
+      e.stopPropagation();
+    });
+  });
 
   // Individual panel collapse ("roll up") — each panel's own button toggles
   // just that panel, and remembers the choice so a page reload keeps it.
