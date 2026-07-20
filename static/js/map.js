@@ -476,7 +476,11 @@
   // groups, but the request is for visual/functional consistency across
   // all parent groups — so add one manually for Aerials. Checking it shows
   // whichever aerial year was last selected (or the first one, if none
-  // yet); unchecking hides whatever aerial is currently shown.
+  // yet); unchecking hides whatever aerial is currently shown AND clears
+  // the individual radio buttons — removing a layer from the map doesn't
+  // touch its radio input's own checked state, so without this the radio
+  // would stay visually selected even with nothing shown on the map,
+  // making it look like the aerial couldn't actually be turned off.
   (function setupAerialsCheckbox() {
     const groupEls = layerControl.getContainer().querySelectorAll(".leaflet-control-layers-group");
     let aerialsGroupEl = null;
@@ -492,27 +496,47 @@
     checkbox.className = "leaflet-control-layers-group-selector";
     labelEl.insertBefore(checkbox, labelEl.firstChild);
 
-    let lastAerial = null;
-
-    map.on("layeradd layerremove", function () {
+    function activeAerialName() {
       for (const name in aerialGroupLayers) {
-        if (map.hasLayer(aerialGroupLayers[name])) { lastAerial = aerialGroupLayers[name]; break; }
+        if (map.hasLayer(aerialGroupLayers[name])) return name;
       }
-      checkbox.checked = !!lastAerial;
-    });
+      return null;
+    }
+
+    let lastAerialName = null;
+
+    function syncCheckboxFromMap() {
+      const active = activeAerialName();
+      if (active) lastAerialName = active;
+      checkbox.checked = !!active;
+    }
+
+    map.on("layeradd layerremove", syncCheckboxFromMap);
+
+    function clearAllAerialRadios() {
+      aerialsGroupEl.querySelectorAll('input[type="radio"]').forEach(function (radio) {
+        radio.checked = false;
+      });
+    }
 
     checkbox.addEventListener("click", function (e) {
       e.stopPropagation();
       if (checkbox.checked) {
-        const toShow = lastAerial || aerialGroupLayers[Object.keys(aerialGroupLayers)[0]];
-        toShow.addTo(map);
+        const nameToShow = lastAerialName || Object.keys(aerialGroupLayers)[0];
+        aerialGroupLayers[nameToShow].addTo(map);
       } else {
         for (const name in aerialGroupLayers) {
           if (map.hasLayer(aerialGroupLayers[name])) map.removeLayer(aerialGroupLayers[name]);
         }
+        clearAllAerialRadios();
       }
     });
   })();
+
+  // Prevent the map underneath from capturing wheel/scroll input meant for
+  // the layer control's own scrollable list — without this, scrolling
+  // inside an expanded control zooms the map instead of scrolling the list.
+  L.DomEvent.disableScrollPropagation(layerControl.getContainer());
 
   const sidebar = document.getElementById("photo-sidebar");
   const toggleTab = document.getElementById("sidebar-toggle");
